@@ -73,11 +73,22 @@
         </div>
     </div>
 
-    <!-- Weekly Attendance Trend -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h2 class="text-xl font-bold text-slate-800 mb-4">Weekly Attendance Trend</h2>
-        <div style="height: 300px;">
-            <canvas id="attendanceTrendChart"></canvas>
+    <!-- Charts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Daily Gate Status -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-bold text-slate-800 mb-4">Daily Gate Attendance (Today)</h2>
+            <div style="height: 300px;">
+                <canvas id="gateChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Weekly Attendance Trend -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-bold text-slate-800 mb-4">Subject Attendance Trend (7 Days)</h2>
+            <div style="height: 300px;">
+                <canvas id="attendanceTrendChart"></canvas>
+            </div>
         </div>
     </div>
 
@@ -89,65 +100,63 @@
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {% for grade in heatmap_data %}
             <div class="relative">
-                {% if grade.absence_rate < 5 %} {% with bg_color="bg-emerald-100" text_color="text-emerald-800"
-                    border_color="border-emerald-300" %} {% elif grade.absence_rate < 10 %} {% with
-                    bg_color="bg-amber-100" text_color="text-amber-800" border_color="border-amber-300" %} {% elif
-                    grade.absence_rate < 20 %} {% with bg_color="bg-orange-100" text_color="text-orange-800"
-                    border_color="border-orange-300" %} {% else %} {% with bg_color="bg-rose-100"
-                    text_color="text-rose-800" border_color="border-rose-300" %} {% endif %} <div
-                    class="border-2 {{ border_color }} {{ bg_color }} rounded-lg p-4 text-center">
-                    <p class="text-sm font-semibold {{ text_color }} mb-2">Grade {{ grade.grade_level }}</p>
-                    <p class="text-3xl font-bold {{ text_color }}">{{ grade.absence_rate }}%</p>
-                    <p class="text-xs {{ text_color }} mt-2">{{ grade.total_absences }} absences</p>
-            </div>
-            {% endwith %}
-        </div>
-        {% empty %}
-        <div class="col-span-full text-center py-8 text-gray-500">
-            No attendance data available
-        </div>
-        {% endfor %}
-    </div>
-</div>
-
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-    <!-- Top Sections -->
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <h2 class="text-xl font-bold text-slate-800 mb-4">Top Sections with Highest Absences</h2>
-        <div class="space-y-3">
-            {% for section in top_sections %}
-            <div class="flex items-center justify-between p-3 bg-rose-50 rounded-lg border border-rose-200">
-                <div>
-                    <p class="font-semibold text-slate-800">Grade {{ section.grade_level }} - {{ section.section }}</p>
+                <div class="border-2 rounded-lg p-4 text-center
+                    {% if grade.absence_rate < 5 %}border-emerald-300 bg-emerald-50 text-emerald-800
+                    {% elif grade.absence_rate < 10 %}border-amber-300 bg-amber-50 text-amber-800
+                    {% elif grade.absence_rate < 20 %}border-orange-300 bg-orange-50 text-orange-800
+                    {% else %}border-rose-300 bg-rose-50 text-rose-800{% endif %}">
+                    <p class="text-sm font-semibold mb-2">Grade {{ grade.grade_level }}</p>
+                    <p class="text-3xl font-bold">{{ grade.absence_rate }}%</p>
+                    <p class="text-xs mt-2">{{ grade.total_absences }} absences</p>
                 </div>
-                <span class="badge-absent">{{ section.absence_count }} absences</span>
+            </div>
+            {% empty %}
+            <div class="col-span-full text-center py-8 text-gray-500">
+                No attendance data available
             </div>
             {% endfor %}
         </div>
     </div>
 
-    <!-- Recent Alerts -->
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <h2 class="text-xl font-bold text-slate-800 mb-4">Recent Absence Alerts</h2>
-        <div class="space-y-3 max-h-80 overflow-y-auto">
-            {% for alert in recent_alerts %}
-            <div class="flex items-start p-3 bg-amber-50 rounded-lg border border-amber-200">
-                <div class="bg-amber-500 rounded-full p-2 mr-3">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
-                        </path>
-                    </svg>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Top Sections -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-bold text-slate-800 mb-4">Top Sections with Highest Absences</h2>
+            <div class="space-y-3">
+                {% for section in top_sections %}
+                <div class="flex items-center justify-between p-3 bg-rose-50 rounded-lg border border-rose-200">
+                    <div>
+                        <p class="font-semibold text-slate-800">Grade {{ section.grade_level }} - {{ section.section }}
+                        </p>
+                    </div>
+                    <span class="badge-absent">{{ section.absence_count }} absences</span>
                 </div>
-                <div class="flex-1">
-                    <p class="font-semibold text-slate-800">{{ alert.student.user.get_full_name }}</p>
-                    <p class="text-sm text-gray-600">{{ alert.subject.name }}</p>
-                </div>
+                {% endfor %}
             </div>
-            {% endfor %}
+        </div>
+
+        <!-- Recent Alerts -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-bold text-slate-800 mb-4">Recent Absence Alerts</h2>
+            <div class="space-y-3 max-h-80 overflow-y-auto">
+                {% for alert in recent_alerts %}
+                <div class="flex items-start p-3 bg-amber-50 rounded-lg border border-amber-200">
+                    <div class="bg-amber-500 rounded-full p-2 mr-3">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                            </path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-slate-800">{{ alert.student.user.get_full_name }}</p>
+                        <p class="text-sm text-gray-600">{{ alert.subject.name }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
-</div>
 </div>
 {% endblock %}
 
@@ -155,9 +164,32 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const trendCtx = document.getElementById('attendanceTrendChart').getContext('2d');
-        const weeklyData = {{ weekly_trend| safe
-    }};
+        // Gate Chart
+        const gateCtx = document.getElementById('gateChart').getContext('2d');
+        new Chart(gateCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Present (Gate)', 'Late (Gate)', 'Absent (Estimated)'],
+                datasets: [{
+                    data: [{{ gate_stats.PRESENT }}, {{ gate_stats.LATE }}, {{ gate_stats.ABSENT }}],
+        backgroundColor: ['#10B981', '#F59E0B', '#EF4444'],
+        hoverOffset: 4
+                }]
+            },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+            }
+        }
+    }
+        });
+
+    // Existing Trend Chart
+    const trendCtx = document.getElementById('attendanceTrendChart').getContext('2d');
+    const weeklyData = {{ weekly_trend| safe }};
 
     new Chart(trendCtx, {
         type: 'line',

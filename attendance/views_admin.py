@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from .decorators import staff_required
 from .models import ParentNotification, SchoolSettings, StudentProfile
 from django.contrib import messages
+from .forms import SchoolSettingsForm
 
 
 @staff_required
@@ -35,19 +36,16 @@ def school_settings_view(request):
     school_settings = SchoolSettings.get_settings()
 
     if request.method == "POST":
-        school_settings.school_name = request.POST.get("school_name")
-        school_settings.absence_alert_threshold = int(
-            request.POST.get("absence_alert_threshold")
-        )
-        school_settings.enable_auto_sms = request.POST.get("enable_auto_sms") == "on"
-        school_settings.scan_tolerance_minutes = int(
-            request.POST.get("scan_tolerance_minutes")
-        )
-        school_settings.save()
-        messages.success(request, "Settings updated successfully.")
-        return redirect("school_settings")
+        form = SchoolSettingsForm(request.POST, request.FILES, instance=school_settings)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Settings updated successfully.")
+            return redirect("school_settings")
+    else:
+        form = SchoolSettingsForm(instance=school_settings)
 
     context = {
+        "form": form,
         "settings": school_settings,
     }
     return render(request, "admin/settings.html", context)

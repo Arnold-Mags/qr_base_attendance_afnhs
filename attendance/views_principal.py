@@ -1,7 +1,16 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from .decorators import principal_required
-from .models import AttendanceRecord, StudentProfile, Subject
+from django.contrib import messages
+from django.shortcuts import redirect
+from .models import (
+    AttendanceRecord,
+    StudentProfile,
+    Subject,
+    DailyAttendance,
+    SchoolSettings,
+)
+from .forms import SchoolSettingsForm
 from django.db.models import Count, Q, Avg
 from datetime import datetime, timedelta
 
@@ -17,11 +26,20 @@ def principal_dashboard(request):
     total_students = StudentProfile.objects.count()
     total_subjects = Subject.objects.count()
 
-    # Today's attendance
+    # Today's attendance (Subject-based)
     today_records = AttendanceRecord.objects.filter(date=today)
     today_present = today_records.filter(Q(status="PRESENT") | Q(status="LATE")).count()
     today_absent = today_records.filter(status="ABSENT").count()
     today_total = today_records.count()
+
+    # Today's General Attendance (Gate Logs)
+    gate_records = DailyAttendance.objects.filter(date=today)
+    gate_present = gate_records.filter(status="PRESENT").count()
+    gate_late = gate_records.filter(status="LATE").count()
+    gate_absent = total_students - (gate_present + gate_late)  # Approximation
+
+    # For chart data (Gate Status)
+    gate_stats = {"PRESENT": gate_present, "LATE": gate_late, "ABSENT": gate_absent}
 
     # Grade-level heatmap data (absence rates)
     grade_levels = [7, 8, 9, 10, 11, 12]
@@ -112,6 +130,28 @@ def principal_dashboard(request):
         "weekly_trend": weekly_trend,
         "recent_alerts": recent_alerts,
         "current_month": today.strftime("%B %Y"),
+        "gate_stats": gate_stats,
     }
 
     return render(request, "principal/dashboard.html", context)
+
+
+@principal_required
+def principal_settings_view(request):
+    """View for principals to configure school-wide settings"""
+    school_settings = SchoolSettings.get_settings()
+
+    if request.method == "POST":
+        form = SchoolSettingsForm(request.POST, request.FILES, instance=school_settings)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "School settings updated successfully.")
+            return redirect("principal_settings")
+    else:
+        form = SchoolSettingsForm(instance=school_settings)
+
+    context = {
+        "form": form,
+        "settings": school_settings,
+    }
+    return render(request, "principal/settings.html", context)

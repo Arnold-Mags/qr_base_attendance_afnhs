@@ -9,7 +9,44 @@
         <p class="text-gray-600 mt-2">Manage your classes and track attendance</p>
     </div>
 
+    <!-- Advisory Section (Prominent) -->
+    <div class="mb-8">
+        <h2 class="text-xl font-bold text-slate-700 mb-4">Advisory Class Management</h2>
+        <div
+            class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl shadow-lg p-6 text-white flex flex-col md:flex-row items-center justify-between">
+            <div class="flex items-center mb-4 md:mb-0">
+                <div class="bg-white bg-opacity-20 rounded-full p-4 mr-4">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                        </path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold">Advisory Class</h3>
+                    <p class="text-blue-100">Manage students and view daily attendance</p>
+                </div>
+            </div>
+            <div class="flex gap-4">
+                <a href="{% url 'advisory_view' %}"
+                    class="bg-white text-blue-700 px-6 py-2 rounded-lg font-bold hover:bg-blue-50 transition-colors">
+                    View Advisory Class
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- My Subjects -->
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold text-slate-700">My Subjects</h2>
+        <a href="{% url 'add_subject_view' %}"
+            class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Add Subject
+        </a>
+    </div>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for item in subject_stats %}
         <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
@@ -18,9 +55,35 @@
                     <div>
                         <h3 class="text-lg font-bold text-slate-800">{{ item.subject.name }}</h3>
                         <p class="text-sm text-gray-600">{{ item.subject.code }}</p>
-                        <p class="text-sm text-gray-500">Grade {{ item.subject.grade_level }} - {{ item.subject.section
-                            }}</p>
+                        <p class="text-sm text-gray-500">Grade {{ item.subject.grade_level }} - {{ item.subject.section }}</p>
                     </div>
+                    <div class="flex items-center space-x-2">
+                        <!-- Edit Button -->
+                        <a href="{% url 'edit_subject_view' item.subject.id %}"
+                            class="text-blue-600 hover:text-blue-800 transition-colors" title="Edit Subject">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                </path>
+                            </svg>
+                        </a>
+                        <!-- Delete Button -->
+                        <form action="{% url 'delete_subject_view' item.subject.id %}" method="POST"
+                            class="inline-block" onsubmit="return confirmDelete(event)">
+                            {% csrf_token %}
+                            <button type="submit" class="text-rose-600 hover:text-rose-800 transition-colors"
+                                title="Delete Subject">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                    </path>
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <!-- Student Count Badge -->
+                <div class="mb-4">
                     <span class="bg-slate-100 text-slate-800 text-xs font-semibold px-3 py-1 rounded-full">
                         {{ item.total_students }} students
                     </span>
@@ -75,7 +138,8 @@
     </div>
 
     <!-- Quick Actions -->
-    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+    <h2 class="text-xl font-bold text-slate-700 mt-8 mb-4">Quick Tools</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <a href="{% url 'scan_portal' %}"
             class="block bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg shadow-md p-6 text-white hover:from-emerald-600 hover:to-emerald-700 transition-all">
             <div class="flex items-center">
@@ -87,7 +151,7 @@
                     </svg>
                 </div>
                 <div>
-                    <h3 class="text-lg font-bold">QR Scan Portal</h3>
+                    <h3 class="text-lg font-bold">QR Scan Portal - Attendance Every Subject</h3>
                     <p class="text-sm opacity-90">Scan student QR codes</p>
                 </div>
             </div>
@@ -110,4 +174,28 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function confirmDelete(event) {
+        event.preventDefault();
+        const form = event.target;
+
+        Swal.fire({
+            title: 'Delete Subject?',
+            text: "You won't be able to revert this! All attendance records for this subject will also be deleted.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#e11d48', // rose-600
+            cancelButtonColor: '#64748b', // slate-500
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+        return false;
+    }
+</script>
 {% endblock %}

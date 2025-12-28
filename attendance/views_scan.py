@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 from django.db import IntegrityError
-from .models import StudentProfile, Subject, AttendanceRecord
+from .models import StudentProfile, Subject, AttendanceRecord, DailyAttendance
 from .decorators import staff_required, student_required
 from .utils import is_within_time_window, trigger_parent_notification, generate_qr_code
 import json
@@ -25,7 +25,6 @@ def scan_portal(request):
 
 
 @require_http_methods(["POST"])
-@login_required
 def verify_scan(request):
     """
     API endpoint to verify QR code scan and create attendance record
@@ -40,9 +39,9 @@ def verify_scan(request):
         subject_id = data.get("subject_id")
         location_data = data.get("location_data")
 
-        if not uuid_str or not subject_id:
+        if not uuid_str:
             return JsonResponse(
-                {"success": False, "message": "Missing required fields"}, status=400
+                {"success": False, "message": "Missing QR code data"}, status=400
             )
 
         # Verify QR code signature and timestamp
@@ -67,6 +66,10 @@ def verify_scan(request):
                 {"success": False, "message": "Student not found."},
                 status=404,
             )
+
+        # --- GENERAL ATTENDANCE LOGIC (If no subject_id) ---
+        if not subject_id:
+            return process_general_attendance(student)
 
         # Verify subject exists
         try:
@@ -176,3 +179,147 @@ def digital_id(request):
     }
 
     return render(request, "student/digital_id.html", context)
+
+
+def gate_scanner(request):
+    """Standalone Gate Scanner View (Public/Kiosk Mode)"""
+    subjects = Subject.objects.all()
+
+    # If logged-in teacher, only show their subjects (optional)
+    if request.user.is_authenticated and request.user.role == "TEACHER":
+        subjects = subjects.filter(teacher=request.user)
+
+    context = {
+        "subjects": subjects,
+        "hide_nav": True,
+    }
+    return render(request, "scan/gate_scanner.html", context)
+
+
+def process_general_attendance(student):
+    """
+    Handle General Attendance Logic (Gate Log)
+
+    Schedule:
+    - TIME IN MORNING: 7:00 AM - 8:00 AM (Late after 8:00 AM)
+    - TIME OUT MORNING: 12:00 PM
+    - TIME IN AFTERNOON: 1:00 PM
+    - TIME OUT AFTERNOON: 4:00 PM - 5:00 PM
+    """
+    now = timezone.localtime()
+    today = now.date()
+    current_time = now.time()
+
+    attendance, created = DailyAttendance.objects.get_or_create(
+        student=student, date=today
+    )
+
+    action = None
+    message = ""
+
+    # Define Time Windows
+    seven_am = timezone.datetime.strptime("07:00", "%H:%M").time()
+    eight_am = timezone.datetime.strptime("08:00", "%H:%M").time()
+    twelve_pm = timezone.datetime.strptime("12:00", "%H:%M").time()
+    one_pm = timezone.datetime.strptime("13:00", "%H:%M").time()
+    four_pm = timezone.datetime.strptime("16:00", "%H:%M").time()
+    five_pm = timezone.datetime.strptime("17:00", "%H:%M").time()
+
+    # 1. MORNING ENTRY
+    if current_time < twelve_pm:
+        if not attendance.time_in_am:
+            attendance.time_in_am = current_time
+            if current_time > eight_am:
+                attendance.status = "LATE"
+                attendance.minutes_late = (
+                    current_time.hour * 60 + current_time.minute
+                ) - (8 * 60)
+                message = "Morning Time In (LATE)"
+            else:
+                attendance.status = "PRESENT"
+                message = "Morning Time In (Success)"
+            action = "TIME_IN_AM"
+            attendance.save()
+        else:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": f"Already timed in for morning at {attendance.time_in_am.strftime('%I:%M %p')}.",
+                },
+                status=409,
+            )
+
+    # 2. MORNING EXIT (Around 12:00 PM)
+    elif twelve_pm <= current_time < one_pm:
+        if not attendance.time_out_am:
+            attendance.time_out_am = current_time
+            message = "Morning Time Out (Success)"
+            action = "TIME_OUT_AM"
+            attendance.save()
+        else:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": f"Already timed out for morning at {attendance.time_out_am.strftime('%I:%M %p')}.",
+                },
+                status=409,
+            )
+
+    # 3. AFTERNOON ENTRY (Around 1:00 PM)
+    elif one_pm <= current_time < four_pm:
+        # Note: If student skipped morning, we might need to handle creation.
+        # But get_or_create handles creation.
+        if not attendance.time_in_pm:
+            attendance.time_in_pm = current_time
+            message = "Afternoon Time In (Success)"
+            action = "TIME_IN_PM"
+            # If they were absent in morning, status remains as is or update logic?
+            # For now, keep simple.
+            attendance.save()
+        else:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": f"Already timed in for afternoon at {attendance.time_in_pm.strftime('%I:%M %p')}.",
+                },
+                status=409,
+            )
+
+    # 4. AFTERNOON EXIT (4:00 PM - 5:00 PM+)
+    elif current_time >= four_pm:
+        if not attendance.time_out_pm:
+            attendance.time_out_pm = current_time
+            message = "Afternoon Time Out (Success)"
+            action = "TIME_OUT_PM"
+            attendance.save()
+        else:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": f"Already timed out for afternoon at {attendance.time_out_pm.strftime('%I:%M %p')}.",
+                },
+                status=409,
+            )
+
+    # SEND NOTIFICATION (Mock)
+    if action:
+        trigger_parent_notification(
+            student,
+            None,
+            f"{student.user.first_name}: {message} at {now.strftime('%I:%M %p')}",
+        )
+
+    return JsonResponse(
+        {
+            "success": True,
+            "message": message,
+            "data": {
+                "student_name": student.user.get_full_name(),
+                "grade_level": student.grade_level,
+                "section": student.section,
+                "status": attendance.status,
+                "timestamp": now.strftime("%I:%M %p"),
+                "action": action,
+            },
+        }
+    )

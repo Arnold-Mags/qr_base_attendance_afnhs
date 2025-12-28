@@ -79,8 +79,13 @@
                             <p class="text-sm text-gray-600 truncate max-w-xs">{{ notification.message }}</p>
                         </td>
                         <td class="px-6 py-4">
-                            <button class="text-slate-600 hover:text-slate-800 font-medium text-sm"
-                                onclick="alert('Message: {{ notification.message|escapejs }}')">View Full</button>
+                            <button class="text-slate-600 hover:text-slate-800 font-medium text-sm" onclick="Swal.fire({
+                                    title: 'Message Preview',
+                                    text: '{{ notification.message|escapejs }}',
+                                    icon: 'info',
+                                    confirmButtonText: 'Close',
+                                    confirmButtonColor: '#1e293b'
+                                })">View Full</button>
                         </td>
                     </tr>
                     {% empty %}

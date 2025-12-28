@@ -89,6 +89,81 @@ class StudentProfile(models.Model):
         super().save(*args, **kwargs)
 
 
+class TeacherProfile(models.Model):
+    """Profile for teachers including advisory class assignment"""
+
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="teacher_profile"
+    )
+    advisory_grade = models.IntegerField(
+        choices=StudentProfile.GRADE_LEVEL_CHOICES,
+        null=True,
+        blank=True,
+        help_text="Grade level of the advisory class",
+    )
+    advisory_section = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        help_text="Section name of the advisory class",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "teacher_profiles"
+        verbose_name = "Teacher Profile"
+        verbose_name_plural = "Teacher Profiles"
+
+    def __str__(self):
+        if self.advisory_grade and self.advisory_section:
+            return f"{self.user.get_full_name()} - Advisory: {self.advisory_grade} {self.advisory_section}"
+        return self.user.get_full_name()
+
+
+class DailyAttendance(models.Model):
+    """Daily General Attendance (Gate Log) for students"""
+
+    STATUS_CHOICES = [
+        ("PRESENT", "Present"),
+        ("LATE", "Late"),
+        ("ABSENT", "Absent"),
+        ("HALF_DAY", "Half Day"),
+    ]
+
+    student = models.ForeignKey(
+        StudentProfile, on_delete=models.CASCADE, related_name="daily_attendance"
+    )
+    date = models.DateField(auto_now_add=True)
+
+    # Time Logs
+    time_in_am = models.TimeField(null=True, blank=True)
+    time_out_am = models.TimeField(null=True, blank=True)
+    time_in_pm = models.TimeField(null=True, blank=True)
+    time_out_pm = models.TimeField(null=True, blank=True)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="PRESENT")
+
+    # Calculated based on arrival time
+    minutes_late = models.IntegerField(default=0)
+
+    remarks = models.TextField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "daily_attendance"
+        verbose_name = "Daily Attendance"
+        verbose_name_plural = "Daily Attendance Records"
+        unique_together = ["student", "date"]
+        ordering = ["-date", "-created_at"]
+
+    def __str__(self):
+        return f"{self.student.user.get_full_name()} - {self.date} ({self.status})"
+
+
 class Subject(models.Model):
     """Subject/Course with schedule information"""
 
@@ -221,6 +296,18 @@ class SchoolSettings(models.Model):
     """Global configuration for the school attendance system"""
 
     school_name = models.CharField(max_length=200, default="ScholarScan Academy")
+    school_id = models.CharField(
+        max_length=50, blank=True, null=True, help_text="Official School ID"
+    )
+    school_logo = models.ImageField(upload_to="school_logo/", blank=True, null=True)
+    address = models.TextField(blank=True, null=True)
+
+    # Division Hierarchy
+    region = models.CharField(max_length=100, blank=True, null=True)
+    division = models.CharField(max_length=100, blank=True, null=True)
+    district = models.CharField(max_length=100, blank=True, null=True)
+    province = models.CharField(max_length=100, blank=True, null=True)
+
     absence_alert_threshold = models.IntegerField(
         default=3,
         help_text="Number of absences before triggering a warning notification",

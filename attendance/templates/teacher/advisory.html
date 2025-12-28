@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}Advisory Class{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-0">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-800">Advisory Class</h1>
+            {% if assigned %}
+            <p class="text-gray-600 mt-2">Grade {{ grade }} - {{ section }} | {{ today|date:"F j, Y" }}</p>
+            {% endif %}
+        </div>
+
+        <div class="mt-4 md:mt-0 flex gap-4">
+            <a href="{% url 'add_student_view' %}"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Add Student
+            </a>
+            <a href="{% url 'teacher_dashboard' %}"
+                class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors">
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    {% if assigned %}
+    <!-- Stats Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+            <p class="text-sm font-medium text-gray-500">Total Students</p>
+            <p class="text-2xl font-bold text-slate-800">{{ total_students }}</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-emerald-200 bg-emerald-50">
+            <p class="text-sm font-medium text-emerald-800">Present / Late</p>
+            <p class="text-2xl font-bold text-emerald-600">{{ present_count }} / {{ late_count }}</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-rose-200 bg-rose-50">
+            <p class="text-sm font-medium text-rose-800">Absent / Pending</p>
+            <p class="text-2xl font-bold text-rose-600">{{ absent_count }}</p>
+        </div>
+    </div>
+
+    <!-- Attendance Table -->
+    <div class="bg-white shadow-xl rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Student Name
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            AM IN
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            AM OUT
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            PM IN
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            PM OUT
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Remarks
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for item in student_data %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-10 w-10">
+                                    {% if item.student.photo %}
+                                    <img class="h-10 w-10 rounded-full object-cover" src="{{ item.student.photo.url }}"
+                                        alt="">
+                                    {% else %}
+                                    <div
+                                        class="h-10 w-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold">
+                                        {{ item.student.user.first_name|first }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">{{ item.student.user.get_full_name }}
+                                    </div>
+                                    <div class="text-xs text-gray-500">LRN: {{ item.student.student_id }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            {% if item.status == 'PRESENT' %}
+                            <span
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800">
+                                Present
+                            </span>
+                            {% elif item.status == 'LATE' %}
+                            <span
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800">
+                                Late
+                            </span>
+                            {% else %}
+                            <span
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                {{ item.status }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                            {{ item.record.time_in_am|date:"h:i A"|default:"-" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                            {{ item.record.time_out_am|date:"h:i A"|default:"-" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                            {{ item.record.time_in_pm|date:"h:i A"|default:"-" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                            {{ item.record.time_out_pm|date:"h:i A"|default:"-" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                            {% if item.record.minutes_late > 0 %}
+                            <span class="text-rose-600 font-medium">{{ item.record.minutes_late }} min late</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                    fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                        clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-yellow-700">
+                    You have not been assigned an advisory class yet. Please contact the administrator to assign your
+                    Grade Level and Section.
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

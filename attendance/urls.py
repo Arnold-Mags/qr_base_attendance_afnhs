@@ -16,6 +16,7 @@ urlpatterns = [
     # QR Scanning
     path("scan/", views_scan.scan_portal, name="scan_portal"),
     path("api/verify-scan/", views_scan.verify_scan, name="verify_scan"),
+    path("gate-scanner/", views_scan.gate_scanner, name="gate_scanner"),
     # Student
     path(
         "student/dashboard/", views_student.student_dashboard, name="student_dashboard"
@@ -24,6 +25,13 @@ urlpatterns = [
     # Teacher
     path(
         "teacher/dashboard/", views_teacher.teacher_dashboard, name="teacher_dashboard"
+    ),
+    path("teacher/advisory/", views_teacher.advisory_view, name="advisory_view"),
+    path(
+        "teacher/advisory/add/", views_teacher.add_student_view, name="add_student_view"
+    ),
+    path(
+        "teacher/subject/add/", views_teacher.add_subject_view, name="add_subject_view"
     ),
     path(
         "teacher/classroom/<int:subject_id>/",
@@ -35,11 +43,26 @@ urlpatterns = [
         views_teacher.mark_manual_attendance,
         name="mark_manual_attendance",
     ),
+    path(
+        "teacher/subject/edit/<int:subject_id>/",
+        views_teacher.edit_subject_view,
+        name="edit_subject_view",
+    ),
+    path(
+        "teacher/subject/delete/<int:subject_id>/",
+        views_teacher.delete_subject_view,
+        name="delete_subject_view",
+    ),
     # Principal
     path(
         "principal/dashboard/",
         views_principal.principal_dashboard,
         name="principal_dashboard",
+    ),
+    path(
+        "principal/settings/",
+        views_principal.principal_settings_view,
+        name="principal_settings",
     ),
     # Administration
     path(

@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+
+{% block title %}Gate Scanner{% endblock %}
+
+{% block content %}
+<div class="h-screen flex flex-col lg:flex-row overflow-hidden bg-gray-100">
+    <!-- Left Panel: Scanner -->
+    <div class="w-full lg:w-1/2 p-6 flex flex-col justify-center bg-white shadow-xl z-10">
+        <div class="mb-6 text-center">
+            {% if school_settings.school_logo %}
+            <img src="{{ school_settings.school_logo.url }}" alt="School Logo"
+                class="h-20 w-20 mx-auto mb-2 object-contain">
+            {% endif %}
+            <h1 class="text-3xl font-bold text-slate-800">
+                {% if school_settings.school_name %}
+                {{ school_settings.school_name }}
+                {% else %}
+                Gate Scanner
+                {% endif %}
+            </h1>
+            <p class="text-gray-500">Point QR Code at Camera</p>
+        </div>
+
+        <div class="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-slate-200">
+            <div id="reader" class="w-full h-full object-cover"></div>
+            <!-- Overlay Guide -->
+            <div class="absolute inset-0 border-2 border-emerald-500/50 pointer-events-none m-8 rounded-lg"></div>
+        </div>
+
+        <div class="mt-8 px-8">
+            <label for="subject-select" class="block text-sm font-medium text-gray-700 mb-2">
+                Active Session / Subject
+            </label>
+            <select id="subject-select"
+                class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm text-lg">
+                <option value="" selected>General Attendance (Gate Log)</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Right Panel: Result Display -->
+    <div id="result-panel"
+        class="w-full lg:w-1/2 flex flex-col items-center justify-center p-12 transition-colors duration-500 bg-slate-50">
+        <!-- Idle State -->
+        <div id="result-idle" class="text-center opacity-100 transition-opacity duration-300">
+            <div class="bg-white p-6 rounded-full inline-block shadow-lg mb-6">
+                <svg class="w-24 h-24 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 14.5v.01M12 18.5v.01M12 22.5v.01M12 10.5v.01M12 6.5v.01M16 21.5v.01M16 17.5v.01M16 13.5v.01M16 9.5v.01M16 5.5v.01M8 21.5v.01M8 17.5v.01M8 13.5v.01M8 9.5v.01M8 5.5v.01M4 21.5v.01M4 17.5v.01M4 13.5v.01M4 9.5v.01M4 5.5v.01M8 5h.01M8 9H8m0 4H8m0 4H8m0 4H8m0-16h.01M4 5h4" />
+                </svg>
+            </div>
+            <h2 class="text-4xl font-bold text-slate-300">Ready to Scan</h2>
+        </div>
+
+        <!-- Success State -->
+        <div id="result-success" class="hidden text-center">
+            <div class="bg-white p-4 rounded-full inline-block shadow-lg mb-6 animate-bounce">
+                <svg class="w-32 h-32 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h2 class="text-6xl font-bold text-white mb-4 drop-shadow-md">PRESENT</h2>
+            <div class="bg-white/20 backdrop-blur-sm rounded-xl p-6 text-white border border-white/30">
+                <p id="student-name" class="text-3xl font-bold mb-2">Student Name</p>
+                <p id="student-info" class="text-xl opacity-90">Grade 10 - Section A</p>
+                <p id="scan-time" class="text-lg mt-4 font-mono bg-black/20 inline-block px-3 py-1 rounded">00:00 AM</p>
+            </div>
+        </div>
+
+        <!-- Error State -->
+        <div id="result-error" class="hidden text-center">
+            <div class="bg-white p-4 rounded-full inline-block shadow-lg mb-6">
+                <svg class="w-32 h-32 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </div>
+            <h2 class="text-5xl font-bold text-white mb-4 drop-shadow-md">ERROR</h2>
+            <p id="error-msg"
+                class="text-2xl text-white font-medium bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/30">
+                Student not found
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+    const beepSuccess = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'); // Example generic beep
+    const beepError = new Audio('https://assets.mixkit.co/active_storage/sfx/2572/2572-preview.mp3');
+
+    // Initialize scanner
+    const html5QrCode = new Html5Qrcode("reader");
+    let isProcessing = false;
+
+    function onScanSuccess(decodedText, decodedResult) {
+        if (isProcessing) return;
+
+        const subjectId = document.getElementById('subject-select').value;
+        // Logic: If value is empty, it means General Attendance.
+        // We no longer block empty subjectId.
+
+        isProcessing = true;
+        // Optional: Pause scanner or visually indicate processing
+
+        // Check for geolocation
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => processScan(decodedText, subjectId, {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                    accuracy: position.coords.accuracy
+                }),
+                (err) => processScan(decodedText, subjectId, null),
+                { timeout: 3000 }
+            );
+        } else {
+            processScan(decodedText, subjectId, null);
+        }
+    }
+
+    function processScan(uuid, subjectId, locationData) {
+        fetch('{% url "verify_scan" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                uuid: uuid,
+                subject_id: subjectId,
+                location_data: locationData
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccess(data.data);
+                } else {
+                    showError(data.message);
+                }
+            })
+            .catch(err => showError("Network Error"))
+            .finally(() => {
+                // Re-enable scanning after delay
+                setTimeout(() => {
+                    resetDisplay();
+                    isProcessing = false;
+                }, 3000);
+            });
+    }
+
+    // UI Helpers
+    const resultPanel = document.getElementById('result-panel');
+    const idleView = document.getElementById('result-idle');
+    const successView = document.getElementById('result-success');
+    const errorView = document.getElementById('result-error');
+
+    function showSuccess(data) {
+        // play sound if possible
+        // beepSuccess.play().catch(e => console.log('Audio blocked'));
+
+        resultPanel.className = "w-full lg:w-1/2 flex flex-col items-center justify-center p-12 transition-colors duration-500 bg-emerald-500";
+        idleView.classList.add('hidden');
+        errorView.classList.add('hidden');
+        successView.classList.remove('hidden');
+
+        document.getElementById('student-name').textContent = data.student_name;
+        document.getElementById('student-info').textContent = `Grade ${data.grade_level} - ${data.section}`;
+        document.getElementById('scan-time').textContent = data.timestamp;
+
+        // Update presence status if late or general action
+        const statusHeader = successView.querySelector('h2');
+        if (data.action) {
+            // General Attendance Action (e.g., "TIME_IN_AM")
+            // Map action to readable text or use status
+            if (data.status === 'LATE') {
+                statusHeader.textContent = "LATE";
+                resultPanel.classList.remove('bg-emerald-500');
+                resultPanel.classList.add('bg-amber-500');
+            } else {
+                statusHeader.textContent = "SUCCESS";
+                // Show specific action message
+                document.getElementById('student-info').textContent = data.message || `Grade ${data.grade_level}`;
+            }
+        } else {
+            // Subject Attendance
+            if (data.status === 'LATE') {
+                statusHeader.textContent = "LATE";
+                resultPanel.classList.remove('bg-emerald-500');
+                resultPanel.classList.add('bg-amber-500');
+            } else {
+                statusHeader.textContent = "PRESENT";
+            }
+        }
+    }
+
+    function showError(msg) {
+        // beepError.play().catch(e => console.log('Audio blocked'));
+
+        resultPanel.className = "w-full lg:w-1/2 flex flex-col items-center justify-center p-12 transition-colors duration-500 bg-rose-500";
+        idleView.classList.add('hidden');
+        successView.classList.add('hidden');
+        errorView.classList.remove('hidden');
+
+        document.getElementById('error-msg').textContent = msg;
+    }
+
+    function resetDisplay() {
+        resultPanel.className = "w-full lg:w-1/2 flex flex-col items-center justify-center p-12 transition-colors duration-500 bg-slate-50";
+        successView.classList.add('hidden');
+        errorView.classList.add('hidden');
+        idleView.classList.remove('hidden');
+    }
+
+    // Start
+    html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 450, height: 450 } },
+        onScanSuccess,
+        (err) => { } // ignore failures
+    );
+</script>
+{% endblock %}

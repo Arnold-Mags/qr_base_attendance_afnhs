@@ -7,12 +7,23 @@
     class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
         <!-- Logo and Title -->
+        <!-- Logo and Title -->
         <div class="text-center">
-            <h2 class="text-5xl font-extrabold text-white mb-2">
+            {% if school_settings.school_logo %}
+            <div class="flex justify-center mb-4">
+                <img src="{{ school_settings.school_logo.url }}" alt="School Logo"
+                    class="h-20 w-20 object-contain rounded-full shadow-lg bg-white p-2">
+            </div>
+            {% endif %}
+
+            <h2 class="text-3xl font-extrabold text-white mb-2">
+                {% if school_settings.school_name %}
+                {{ school_settings.school_name }}
+                {% else %}
                 <span class="text-emerald-500">Scholar</span>Scan
+                {% endif %}
             </h2>
-            <p class="text-gray-300 text-lg">School Attendance System</p>
-            <p class="text-gray-400 text-sm mt-2">Junior & Senior High School</p>
+            <p class="text-gray-300 text-lg">School QRCode Base Attendance System</p>
         </div>
 
         <!-- Login Form -->

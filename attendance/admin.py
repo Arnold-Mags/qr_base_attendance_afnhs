@@ -1,6 +1,15 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, StudentProfile, Subject, AttendanceRecord, ParentNotification
+from .models import (
+    User,
+    StudentProfile,
+    Subject,
+    AttendanceRecord,
+    ParentNotification,
+    TeacherProfile,
+    DailyAttendance,
+    SchoolSettings,
+)
 
 
 @admin.register(User)
@@ -132,3 +141,90 @@ class ParentNotificationAdmin(admin.ModelAdmin):
         return obj.student.parent_name
 
     get_parent_name.short_description = "Parent Name"
+
+
+@admin.register(TeacherProfile)
+class TeacherProfileAdmin(admin.ModelAdmin):
+    """Teacher Profile admin for advisory assignments"""
+
+    list_display = ["get_full_name", "advisory_grade", "advisory_section"]
+    list_filter = ["advisory_grade", "advisory_section"]
+    search_fields = ["user__first_name", "user__last_name"]
+
+    def get_full_name(self, obj):
+        return obj.user.get_full_name()
+
+    get_full_name.short_description = "Teacher Name"
+
+
+@admin.register(DailyAttendance)
+class DailyAttendanceAdmin(admin.ModelAdmin):
+    """Daily General Attendance (Gate Log) admin"""
+
+    list_display = [
+        "student",
+        "date",
+        "time_in_am",
+        "time_out_am",
+        "time_in_pm",
+        "time_out_pm",
+        "status",
+        "minutes_late",
+    ]
+    list_filter = ["status", "date", "student__grade_level", "student__section"]
+    search_fields = [
+        "student__user__first_name",
+        "student__user__last_name",
+        "student__student_id",
+    ]
+    readonly_fields = ["date", "created_at", "updated_at"]
+    date_hierarchy = "date"
+
+    fieldsets = (
+        (
+            "Student Information",
+            {"fields": ("student",)},
+        ),
+        (
+            "Time Logs",
+            {
+                "fields": (
+                    "time_in_am",
+                    "time_out_am",
+                    "time_in_pm",
+                    "time_out_pm",
+                )
+            },
+        ),
+        ("Status", {"fields": ("status", "minutes_late", "remarks")}),
+        ("Timestamps", {"fields": ("date", "created_at", "updated_at")}),
+    )
+
+
+@admin.register(SchoolSettings)
+class SchoolSettingsAdmin(admin.ModelAdmin):
+    """School Settings Admin (Singleton)"""
+
+    fieldsets = (
+        (
+            "School Details",
+            {"fields": ("school_name", "school_id", "school_logo", "address")},
+        ),
+        ("Hierarchy", {"fields": ("region", "province", "division", "district")}),
+        (
+            "System Configuration",
+            {
+                "fields": (
+                    "absence_alert_threshold",
+                    "enable_auto_sms",
+                    "scan_tolerance_minutes",
+                )
+            },
+        ),
+    )
+
+    def has_add_permission(self, request):
+        # Only allow adding if no instance exists
+        if self.model.objects.exists():
+            return False
+        return super().has_add_permission(request)

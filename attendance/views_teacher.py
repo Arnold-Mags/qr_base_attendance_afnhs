@@ -1,9 +1,17 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from .decorators import teacher_required
-from .models import Subject, AttendanceRecord, StudentProfile
+from .models import (
+    Subject,
+    AttendanceRecord,
+    StudentProfile,
+    DailyAttendance,
+    TeacherProfile,
+    User,
+)
 from django.db.models import Count, Q
 from datetime import datetime, timedelta
+from .forms import StudentRegistrationForm, SubjectForm
 
 
 @teacher_required
@@ -144,5 +152,196 @@ def mark_manual_attendance(request, subject_id):
         from django.shortcuts import redirect
 
         return redirect("classroom_view", subject_id=subject_id)
+
+    return redirect("teacher_dashboard")
+
+
+@teacher_required
+def advisory_view(request):
+    """View for teachers to monitor their advisory class daily attendance"""
+    try:
+        # Check if teacher profile exists
+        if hasattr(request.user, "teacher_profile"):
+            profile = request.user.teacher_profile
+        else:
+            # Auto-create if missing (optional, or handle as error)
+            # For now, just handle as not assigned
+            return render(request, "teacher/advisory.html", {"assigned": False})
+
+        grade = profile.advisory_grade
+        section = profile.advisory_section
+
+        if not grade or not section:
+            return render(request, "teacher/advisory.html", {"assigned": False})
+
+        # Get students
+        students = (
+            StudentProfile.objects.filter(grade_level=grade, section=section)
+            .select_related("user")
+            .order_by("user__last_name")
+        )
+
+        today = datetime.now().date()
+        daily_records = DailyAttendance.objects.filter(student__in=students, date=today)
+        record_map = {r.student.id: r for r in daily_records}
+
+        student_data = []
+        present_count = 0
+        late_count = 0
+
+        for student in students:
+            record = record_map.get(student.id)
+            status = "PENDING"
+            if record:
+                status = record.status
+                if status == "PRESENT":
+                    present_count += 1
+                if status == "LATE":
+                    late_count += 1
+
+            student_data.append(
+                {"student": student, "record": record, "status": status}
+            )
+
+        context = {
+            "assigned": True,
+            "grade": grade,
+            "section": section,
+            "student_data": student_data,
+            "today": today,
+            "total_students": len(students),
+            "present_count": present_count,
+            "late_count": late_count,
+            "absent_count": len(students)
+            - present_count
+            - late_count,  # Rough estimate
+        }
+        return render(request, "teacher/advisory.html", context)
+
+    except Exception as e:
+        # Log error?
+        return render(
+            request, "teacher/advisory.html", {"assigned": False, "error": str(e)}
+        )
+
+
+@teacher_required
+def add_student_view(request):
+    """View for teachers to add new students to their advisory class"""
+
+    # Check assignment
+    try:
+        profile = request.user.teacher_profile
+        if not profile.advisory_grade or not profile.advisory_section:
+            from django.contrib import messages
+
+            messages.error(request, "You do not have an advisory class assigned.")
+            return redirect("teacher_dashboard")
+    except TeacherProfile.DoesNotExist:
+        from django.contrib import messages
+
+        messages.error(request, "Teacher profile not found.")
+        return redirect("teacher_dashboard")
+
+    if request.method == "POST":
+        form = StudentRegistrationForm(request.POST, request.FILES)
+        if form.is_valid():
+            # Create User
+            username = form.cleaned_data["student_id"]  # Use LRN as username
+            password = "password123"  # Default password (should be changed)
+            first_name = form.cleaned_data["first_name"]
+            last_name = form.cleaned_data["last_name"]
+
+            # Check if user exists
+            if User.objects.filter(username=username).exists():
+                from django.contrib import messages
+
+                messages.error(request, f"Student with LRN {username} already exists.")
+            else:
+                user = User.objects.create_user(
+                    username=username,
+                    password=password,
+                    first_name=first_name,
+                    last_name=last_name,
+                    role="STUDENT",
+                )
+
+                # Create Profile
+                student = form.save(commit=False)
+                student.user = user
+                student.grade_level = profile.advisory_grade
+                student.section = profile.advisory_section
+                student.save()
+
+                from django.contrib import messages
+
+                messages.success(
+                    request, f"Student {first_name} {last_name} added to your advisory."
+                )
+                return redirect("advisory_view")
+    else:
+        form = StudentRegistrationForm()
+
+    context = {
+        "form": form,
+        "grade": profile.advisory_grade,
+        "section": profile.advisory_section,
+    }
+    return render(request, "teacher/add_student.html", context)
+
+
+@teacher_required
+def add_subject_view(request):
+    """View for teachers to add their own subjects"""
+    if request.method == "POST":
+        form = SubjectForm(request.POST)
+        if form.is_valid():
+            subject = form.save(commit=False)
+            subject.teacher = request.user
+            subject.save()
+            from django.contrib import messages
+
+            messages.success(request, f"Subject {subject.name} created successfully.")
+            return redirect("teacher_dashboard")
+    else:
+        form = SubjectForm()
+
+    return render(request, "teacher/add_subject.html", {"form": form})
+
+
+@teacher_required
+def edit_subject_view(request, subject_id):
+    """View to edit an existing subject"""
+    subject = get_object_or_404(Subject, id=subject_id, teacher=request.user)
+
+    if request.method == "POST":
+        form = SubjectForm(request.POST, instance=subject)
+        if form.is_valid():
+            form.save()
+            from django.contrib import messages
+
+            messages.success(request, f"Subject {subject.name} updated successfully.")
+            return redirect("teacher_dashboard")
+    else:
+        form = SubjectForm(instance=subject)
+
+    return render(
+        request,
+        "teacher/add_subject.html",
+        {"form": form, "is_edit": True, "subject": subject},
+    )
+
+
+@teacher_required
+def delete_subject_view(request, subject_id):
+    """View to delete a subject"""
+    if request.method == "POST":
+        subject = get_object_or_404(Subject, id=subject_id, teacher=request.user)
+        subject_name = subject.name
+        subject.delete()
+        from django.contrib import messages
+
+        messages.success(request, f"Subject {subject_name} deleted successfully.")
+        return redirect("teacher_dashboard")
 
     return redirect("teacher_dashboard")

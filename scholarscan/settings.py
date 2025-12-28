@@ -38,6 +38,7 @@ ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 # Application definition
 
 INSTALLED_APPS = [
+    "jazzmin",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -74,6 +75,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "attendance.context_processors.school_settings",
             ],
         },
     },
@@ -155,3 +157,12 @@ LOGOUT_REDIRECT_URL = "login"
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+JAZZMIN_SETTINGS = {
+    "site_title": "ScholaScan Admin",
+    "site_header": "ScholarScan",
+    "site_brand": "ScholarScan",
+    "welcome_sign": "Welcome to ScholarScan Admin",
+    "site_logo": "afnhs123.png",
+    "copyright": "ArSystems",
+}
