@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+
+{% block title %}Attendance Logs{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-0">
+    <!-- Header -->
+    <div class="mb-8 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-800">Attendance Logs</h1>
+            <p class="text-gray-600 mt-2">Filter and view daily attendance records</p>
+        </div>
+        <a href="{% url 'principal_dashboard' %}"
+            class="text-blue-600 hover:text-blue-800 font-medium flex items-center">
+            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18">
+                </path>
+            </svg>
+            Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <form method="GET" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <!-- Search -->
+            <div class="col-span-1 md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Search Student</label>
+                <div class="relative">
+                    <input type="text" name="search" value="{{ search_query }}" placeholder="Search by Name or LRN..."
+                        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grade Level -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Grade Level</label>
+                <select name="grade"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                    <option value="">All Grades</option>
+                    {% for value, label in grade_levels %}
+                    <option value="{{ value }}" {% if grade_filter == value|stringformat:"i" %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Section -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Section</label>
+                <select name="section"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                    <option value="">All Sections</option>
+                    {% for section in sections %}
+                    <option value="{{ section }}" {% if section_filter == section %}selected{% endif %}>{{ section }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Date Range -->
+            <!-- We could split this into start/end or keep it simple. -->
+            <div class="flex flex-col md:flex-row gap-2 col-span-1 md:col-span-1">
+                <div class="w-full">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                    <input type="date" name="start_date" value="{{ start_date }}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm">
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="col-span-1 md:col-span-5 flex justify-end gap-2 mt-2">
+                <a href="{% url 'attendance_logs' %}"
+                    class="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 font-medium transition-colors">
+                    Reset
+                </a>
+                <button type="submit"
+                    class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-bold shadow transition-colors">
+                    Apply Filters
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white rounded-lg shadow-xl overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Student Name</th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Grade/Section</th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time
+                            In</th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time
+                            Out</th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for log in logs %}
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ log.date|date:"M d, Y" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                {% if log.student.photo %}
+                                <img class="h-8 w-8 rounded-full object-cover mr-3" src="{{ log.student.photo.url }}"
+                                    alt="">
+                                {% else %}
+                                <div
+                                    class="h-8 w-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mr-3 font-bold text-xs">
+                                    {{ log.student.user.first_name|first }}{{ log.student.user.last_name|first }}
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900">{{ log.student.user.get_full_name }}
+                                    </div>
+                                    <div class="text-xs text-gray-500">{{ log.student.student_id }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            Grade {{ log.student.grade_level }} - {{ log.student.section }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">
+                            {{ log.time_in_am|time:"h:i A"|default:"--" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">
+                            {{ log.time_out_pm|time:"h:i A"|default:"--" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if log.status == 'PRESENT' %}
+                            <span
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800">
+                                Present
+                            </span>
+                            {% elif log.status == 'LATE' %}
+                            <span
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800">
+                                Late
+                            </span>
+                            {% elif log.status == 'ABSENT' %}
+                            <span
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-rose-100 text-rose-800">
+                                Absent
+                            </span>
+                            {% else %}
+                            <span
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                {{ log.status }}
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                            No attendance records found matching your filters.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if logs.has_other_pages %}
+        <div class="bg-white px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-700">
+                        Showing
+                        <span class="font-medium">{{ logs.start_index }}</span>
+                        to
+                        <span class="font-medium">{{ logs.end_index }}</span>
+                        of
+                        <span class="font-medium">{{ logs.paginator.count }}</span>
+                        results
+                    </p>
+                </div>
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        {% if logs.has_previous %}
+                        <a href="?page={{ logs.previous_page_number }}&search={{ search_query }}&grade={{ grade_filter }}&section={{ section_filter }}&start_date={{ start_date }}"
+                            class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">Previous</span>
+                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd"
+                                    d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </a>
+                        {% endif %}
+
+                        {% for i in logs.paginator.page_range %}
+                        {% if logs.number == i %}
+                        <span
+                            class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-emerald-50 text-sm font-medium text-emerald-600">
+                            {{ i }}
+                        </span>
+                        {% elif i > logs.number|add:'-3' and i < logs.number|add:'3' %} <a
+                            href="?page={{ i }}&search={{ search_query }}&grade={{ grade_filter }}&section={{ section_filter }}&start_date={{ start_date }}"
+                            class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            {{ i }}
+                            </a>
+                            {% endif %}
+                            {% endfor %}
+
+                            {% if logs.has_next %}
+                            <a href="?page={{ logs.next_page_number }}&search={{ search_query }}&grade={{ grade_filter }}&section={{ section_filter }}&start_date={{ start_date }}"
+                                class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <span class="sr-only">Next</span>
+                                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                    fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd"
+                                        d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </a>
+                            {% endif %}
+                    </nav>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

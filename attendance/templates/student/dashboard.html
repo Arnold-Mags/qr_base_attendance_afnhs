@@ -8,8 +8,7 @@
     <!-- Header -->
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-slate-800">Welcome, {{ student.user.first_name }}!</h1>
-        <p class="text-gray-600 mt-2">Grade {{ student.grade_level }} - {{ student.section }}{% if student.strand %} ({{
-            student.get_strand_display }}){% endif %}</p>
+        <p class="text-gray-600 mt-2">Grade {{ student.grade_level }} - {{ student.section }}{% if student.strand %} ({{ student.get_strand_display }}){% endif %}</p>
     </div>
 
     <!-- Overall Statistics -->

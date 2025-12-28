@@ -64,6 +64,11 @@ urlpatterns = [
         views_principal.principal_settings_view,
         name="principal_settings",
     ),
+    path(
+        "principal/attendance-logs/",
+        views_principal.attendance_logs_view,
+        name="attendance_logs",
+    ),
     # Administration
     path(
         "admin/notifications/",

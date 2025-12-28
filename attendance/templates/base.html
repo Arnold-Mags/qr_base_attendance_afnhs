@@ -86,10 +86,10 @@
                         {% endif %}
 
                         {% if user.role == 'PRINCIPAL' or user.role == 'SUPERADMIN' %}
-                        <a href="{% url 'notification_history' %}"
+                        <!--a href="{% url 'notification_history' %}"
                             class="border-transparent text-gray-300 hover:border-emerald-500 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                             Notifications
-                        </a>
+                        </a-->
                         {% if user.role == 'PRINCIPAL' %}
                         <a href="{% url 'principal_settings' %}"
                             class="border-transparent text-gray-300 hover:border-emerald-500 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">

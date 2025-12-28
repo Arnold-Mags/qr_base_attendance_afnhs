@@ -13,6 +13,12 @@ from .models import (
 from .forms import SchoolSettingsForm
 from django.db.models import Count, Q, Avg
 from datetime import datetime, timedelta
+import openpyxl
+from openpyxl.styles import Font, Alignment, PatternFill
+from io import BytesIO
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from xhtml2pdf import pisa
 
 
 @principal_required
@@ -155,3 +161,149 @@ def principal_settings_view(request):
         "settings": school_settings,
     }
     return render(request, "principal/settings.html", context)
+
+
+@principal_required
+def attendance_logs_view(request):
+    """View to display detailed attendance logs with filtering"""
+
+    # Base Query
+    logs = (
+        DailyAttendance.objects.select_related("student", "student__user")
+        .all()
+        .order_by("-date", "-time_in_am")
+    )
+
+    # Filters
+    search_query = request.GET.get("search", "")
+    grade_filter = request.GET.get("grade", "")
+    section_filter = request.GET.get("section", "")
+    start_date = request.GET.get("start_date", "")
+    end_date = request.GET.get("end_date", "")
+
+    if search_query:
+        logs = logs.filter(
+            Q(student__user__first_name__icontains=search_query)
+            | Q(student__user__last_name__icontains=search_query)
+            | Q(student__student_id__icontains=search_query)
+        )
+
+    if grade_filter:
+        logs = logs.filter(student__grade_level=grade_filter)
+
+    if section_filter:
+        logs = logs.filter(student__section__icontains=section_filter)
+
+    if start_date:
+        logs = logs.filter(date__gte=start_date)
+
+    if end_date:
+        logs = logs.filter(date__lte=end_date)
+
+    if request.GET.get("export") == "excel":
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Attendance Logs"
+
+        # Headers
+        headers = [
+            "Date",
+            "Student Name",
+            "LRN",
+            "Grade",
+            "Section",
+            "AM IN",
+            "AM OUT",
+            "PM IN",
+            "PM OUT",
+            "Status",
+        ]
+        ws.append(headers)
+
+        # Style headers
+        for cell in ws[1]:
+            cell.font = Font(bold=True, color="FFFFFF")
+            cell.fill = PatternFill(
+                start_color="10B981", end_color="10B981", fill_type="solid"
+            )
+            cell.alignment = Alignment(horizontal="center")
+
+        # Data rows
+        for log in logs:
+            ws.append(
+                [
+                    log.date.strftime("%Y-%m-%d"),
+                    log.student.user.get_full_name(),
+                    log.student.student_id,
+                    log.student.grade_level,
+                    log.student.section,
+                    log.time_in_am.strftime("%I:%M %p") if log.time_in_am else "--",
+                    log.time_out_am.strftime("%I:%M %p") if log.time_out_am else "--",
+                    log.time_in_pm.strftime("%I:%M %p") if log.time_in_pm else "--",
+                    log.time_out_pm.strftime("%I:%M %p") if log.time_out_pm else "--",
+                    log.status,
+                ]
+            )
+
+        response = HttpResponse(
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response["Content-Disposition"] = 'attachment; filename="attendance_logs.xlsx"'
+        wb.save(response)
+        return response
+
+    if request.GET.get("export") == "pdf":
+        school_settings = SchoolSettings.get_settings()
+        template_path = "principal/attendance_logs_pdf.html"
+        context = {
+            "logs": logs,
+            "settings": school_settings,
+            "grade_filter": grade_filter,
+            "section_filter": section_filter,
+            "start_date": start_date,
+            "end_date": end_date,
+            "generated_at": datetime.now(),
+        }
+        # Create a Django response object, and specify content_type as pdf
+        response = HttpResponse(content_type="application/pdf")
+        response["Content-Disposition"] = 'attachment; filename="attendance_logs.pdf"'
+        # find the template and render it.
+        html = render_to_string(template_path, context)
+
+        # create a pdf
+        pisa_status = pisa.CreatePDF(html, dest=response)
+        # if error then show some funny view
+        if pisa_status.err:
+            return HttpResponse("We had some errors <pre>" + html + "</pre>")
+        return response
+
+    # Pagination
+    from django.core.paginator import Paginator
+
+    paginator = Paginator(logs, 50)  # 50 logs per page
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    # Context Data for dropdowns
+    grade_levels = StudentProfile.GRADE_LEVEL_CHOICES
+    # Get distinct sections? (Optional, might be slow if many students)
+    # Ideally, we'd have a Section model, but for now we iterate unique sections from students
+    sections = (
+        StudentProfile.objects.values_list("section", flat=True)
+        .distinct()
+        .order_by("section")
+    )
+
+    context = {
+        "logs": page_obj,
+        "grade_levels": grade_levels,
+        "sections": sections,
+        # Maintain filter state
+        "search_query": search_query,
+        "grade_filter": grade_filter,
+        "section_filter": section_filter,
+        "start_date": start_date,
+        "end_date": end_date,
+    }
+
+    return render(request, "principal/attendance_logs.html", context)
