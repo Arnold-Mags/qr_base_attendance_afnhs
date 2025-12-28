@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Modern Academic Theme - ScholarScan */
+@layer base {
+  :root {
+    --color-primary: #1e293b; /* Slate-800 */
+    --color-success: #10b981; /* Emerald-500 */
+    --color-danger: #f43f5e; /* Rose-500 */
+    --color-warning: #f59e0b; /* Amber-500 */
+  }
+}
+
+@layer components {
+  /* Custom button styles */
+  .btn-primary {
+    @apply bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+
+  .btn-success {
+    @apply bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+
+  .btn-danger {
+    @apply bg-rose-500 hover:bg-rose-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+
+  /* Card styles */
+  .card {
+    @apply bg-white rounded-lg shadow-md p-6 border border-gray-200;
+  }
+
+  .card-header {
+    @apply text-xl font-bold text-slate-800 mb-4;
+  }
+
+  /* Status badges */
+  .badge-present {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800;
+  }
+
+  .badge-late {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800;
+  }
+
+  .badge-absent {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-rose-100 text-rose-800;
+  }
+
+  /* Student photo grid */
+  .student-photo {
+    @apply w-24 h-24 rounded-full object-cover border-4 transition-all duration-300;
+  }
+
+  .student-photo.present {
+    @apply border-emerald-500;
+  }
+
+  .student-photo.late {
+    @apply border-amber-500;
+  }
+
+  .student-photo.absent {
+    @apply border-rose-500;
+  }
+
+  .student-photo.pending {
+    @apply border-gray-300 opacity-50;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-600;
+  }
+}

@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}Teacher Dashboard{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-0">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-slate-800">Teacher Dashboard</h1>
+        <p class="text-gray-600 mt-2">Manage your classes and track attendance</p>
+    </div>
+
+    <!-- My Subjects -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for item in subject_stats %}
+        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800">{{ item.subject.name }}</h3>
+                        <p class="text-sm text-gray-600">{{ item.subject.code }}</p>
+                        <p class="text-sm text-gray-500">Grade {{ item.subject.grade_level }} - {{ item.subject.section
+                            }}</p>
+                    </div>
+                    <span class="bg-slate-100 text-slate-800 text-xs font-semibold px-3 py-1 rounded-full">
+                        {{ item.total_students }} students
+                    </span>
+                </div>
+
+                <!-- Today's Attendance -->
+                <div class="mb-4">
+                    <div class="flex justify-between text-sm mb-1">
+                        <span class="text-gray-600">Today's Attendance</span>
+                        <span class="font-semibold">{{ item.today_attendance }}/{{ item.total_students }}</span>
+                    </div>
+                    <div class="bg-gray-200 rounded-full h-2">
+                        <div class="bg-emerald-500 h-2 rounded-full"
+                            style="width: {% widthratio item.today_attendance item.total_students 100 %}%"></div>
+                    </div>
+                </div>
+
+                <!-- This Week's Stats -->
+                <div class="grid grid-cols-3 gap-2 mb-4">
+                    <div class="text-center">
+                        <p class="text-xs text-gray-500">Present</p>
+                        <p class="text-lg font-bold text-emerald-600">{{ item.week_stats.PRESENT }}</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xs text-gray-500">Late</p>
+                        <p class="text-lg font-bold text-amber-600">{{ item.week_stats.LATE }}</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xs text-gray-500">Absent</p>
+                        <p class="text-lg font-bold text-rose-600">{{ item.week_stats.ABSENT }}</p>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <a href="{% url 'classroom_view' item.subject.id %}"
+                    class="block w-full bg-slate-800 hover:bg-slate-700 text-white text-center font-semibold py-2 rounded-lg transition-colors">
+                    View Classroom
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full bg-gray-100 rounded-lg p-12 text-center">
+            <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                </path>
+            </svg>
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">No Subjects Assigned</h3>
+            <p class="text-gray-500">Contact your administrator to get subjects assigned to you.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <a href="{% url 'scan_portal' %}"
+            class="block bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg shadow-md p-6 text-white hover:from-emerald-600 hover:to-emerald-700 transition-all">
+            <div class="flex items-center">
+                <div class="bg-white bg-opacity-20 rounded-full p-3 mr-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z">
+                        </path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold">QR Scan Portal</h3>
+                    <p class="text-sm opacity-90">Scan student QR codes</p>
+                </div>
+            </div>
+        </a>
+
+        <div class="bg-gradient-to-r from-slate-800 to-slate-900 rounded-lg shadow-md p-6 text-white">
+            <div class="flex items-center">
+                <div class="bg-white bg-opacity-20 rounded-full p-3 mr-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                        </path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold">Reports</h3>
+                    <p class="text-sm opacity-90">Generate attendance reports</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

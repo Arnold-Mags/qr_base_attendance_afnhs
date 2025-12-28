@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Dashboard{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-0">
+    {% if has_profile %}
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-slate-800">Welcome, {{ student.user.first_name }}!</h1>
+        <p class="text-gray-600 mt-2">Grade {{ student.grade_level }} - {{ student.section }}{% if student.strand %} ({{
+            student.get_strand_display }}){% endif %}</p>
+    </div>
+
+    <!-- Overall Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Total Days</p>
+                    <p class="text-2xl font-bold text-slate-800">{{ overall_stats.total }}</p>
+                </div>
+                <div class="bg-slate-100 rounded-full p-3">
+                    <svg class="w-6 h-6 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                        </path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Present</p>
+                    <p class="text-2xl font-bold text-emerald-600">{{ overall_stats.present }}</p>
+                </div>
+                <div class="bg-emerald-100 rounded-full p-3">
+                    <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Late</p>
+                    <p class="text-2xl font-bold text-amber-600">{{ overall_stats.late }}</p>
+                </div>
+                <div class="bg-amber-100 rounded-full p-3">
+                    <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Rate</p>
+                    <p class="text-2xl font-bold text-slate-800">{{ overall_stats.percentage }}%</p>
+                </div>
+                <div class="bg-blue-100 rounded-full p-3">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                        </path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <!-- Attendance Calendar -->
+        <div class="lg:col-span-2 bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-bold text-slate-800 mb-4">Attendance Calendar ({{ current_month }})</h2>
+
+            <div class="grid grid-cols-7 gap-1 text-center mb-2">
+                <div class="text-xs font-bold text-gray-500 uppercase">Sun</div>
+                <div class="text-xs font-bold text-gray-500 uppercase">Mon</div>
+                <div class="text-xs font-bold text-gray-500 uppercase">Tue</div>
+                <div class="text-xs font-bold text-gray-500 uppercase">Wed</div>
+                <div class="text-xs font-bold text-gray-500 uppercase">Thu</div>
+                <div class="text-xs font-bold text-gray-500 uppercase">Fri</div>
+                <div class="text-xs font-bold text-gray-500 uppercase">Sat</div>
+            </div>
+
+            <div class="grid grid-cols-7 gap-2">
+                {% for week in calendar_grid %}
+                {% for day in week %}
+                <div class="relative h-14 md:h-20 rounded-lg border flex flex-col items-center justify-center
+                            {% if day.status == 'present' %}bg-emerald-50 border-emerald-200
+                            {% elif day.status == 'late' %}bg-amber-50 border-amber-200
+                            {% elif day.status == 'absent' %}bg-rose-50 border-rose-200
+                            {% elif day.day == '' %}bg-gray-50 border-transparent
+                            {% else %}bg-white border-gray-100{% endif %}
+                            {% if day.is_today %}ring-2 ring-blue-500{% endif %}">
+
+                    <span
+                        class="text-sm {% if day.day == '' %}text-transparent{% else %}text-gray-700{% endif %} font-semibold">
+                        {{ day.day }}
+                    </span>
+
+                    {% if day.status %}
+                    <div class="mt-1">
+                        {% if day.status == 'present' %}
+                        <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                        {% elif day.status == 'late' %}
+                        <div class="w-2 h-2 rounded-full bg-amber-500"></div>
+                        {% elif day.status == 'absent' %}
+                        <div class="w-2 h-2 rounded-full bg-rose-500"></div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% endfor %}
+            </div>
+
+            <div class="mt-4 flex flex-wrap gap-4 text-xs">
+                <div class="flex items-center">
+                    <div class="w-3 h-3 rounded-full bg-emerald-500 mr-2"></div> Present
+                </div>
+                <div class="flex items-center">
+                    <div class="w-3 h-3 rounded-full bg-amber-500 mr-2"></div> Late
+                </div>
+                <div class="flex items-center">
+                    <div class="w-3 h-3 rounded-full bg-rose-500 mr-2"></div> Absent
+                </div>
+                <div class="flex items-center">
+                    <div class="w-3 h-3 rounded-full bg-gray-200 mr-2 border border-gray-300"></div> Pending
+                </div>
+            </div>
+        </div>
+
+        <!-- Subject Quick Stats -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-bold text-slate-800 mb-4">Subject Stats</h2>
+            <div class="space-y-4">
+                {% for item in subject_stats %}
+                <div>
+                    <div class="flex justify-between text-sm mb-1">
+                        <span class="font-medium text-slate-700">{{ item.subject.name }}</span>
+                        <span class="text-gray-500">{{ item.stats.percentage }}%</span>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-2">
+                        <div class="bg-emerald-500 h-2 rounded-full" style="width: {{ item.stats.percentage }}%"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <a href="{% url 'digital_id' %}"
+                class="mt-8 block w-full bg-slate-800 hover:bg-slate-700 text-white text-center font-bold py-3 rounded-lg transition-all">
+                My Digital ID
+            </a>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="max-w-md mx-auto text-center py-12">
+        <div class="bg-rose-100 rounded-lg p-8">
+            <h2 class="text-xl font-bold text-slate-800 mb-2">Profile Not Found</h2>
+            <p class="text-gray-600">Please contact your school administrator.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}School Settings{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-0">
+    <div class="max-w-3xl mx-auto">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-slate-800">School Settings</h1>
+            <p class="text-gray-600 mt-2">Manage global attendance configuration and alert policies</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <form method="POST" class="p-8 space-y-8">
+                {% csrf_token %}
+
+                <!-- School Info Section -->
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800 border-b border-gray-100 pb-2 mb-6 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+                            </path>
+                        </svg>
+                        School Information
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="school_name" class="block text-sm font-medium text-gray-700 mb-1">School
+                                Name</label>
+                            <input type="text" name="school_name" id="school_name" value="{{ settings.school_name }}"
+                                class="w-full rounded-lg border-gray-300 shadow-sm focus:border-slate-500 focus:ring-slate-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notification Policies Section -->
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800 border-b border-gray-100 pb-2 mb-6 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z">
+                            </path>
+                        </svg>
+                        Notification Policies
+                    </h2>
+                    <div class="space-y-6">
+                        <div class="flex items-start">
+                            <div class="flex items-center h-5">
+                                <input type="checkbox" name="enable_auto_sms" id="enable_auto_sms" {% if
+                                    settings.enable_auto_sms %}checked{% endif %}
+                                    class="h-4 w-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500">
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="enable_auto_sms" class="font-medium text-gray-700">Enable Automatic SMS
+                                    Alerts</label>
+                                <p class="text-gray-500">Send an alert to parents immediately after every marked
+                                    absence.</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="absence_alert_threshold"
+                                class="block text-sm font-medium text-gray-700 mb-1">Absence Alert Threshold</label>
+                            <div class="flex items-center space-x-3">
+                                <input type="number" name="absence_alert_threshold" id="absence_alert_threshold"
+                                    value="{{ settings.absence_alert_threshold }}" min="1" max="20"
+                                    class="w-24 rounded-lg border-gray-300 shadow-sm focus:border-slate-500 focus:ring-slate-500">
+                                <span class="text-sm text-gray-500">absences before a warning alert is triggered (if
+                                    auto-SMS is disabled).</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scanning Configuration Section -->
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800 border-b border-gray-100 pb-2 mb-6 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Scanning Configuration
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="scan_tolerance_minutes"
+                                class="block text-sm font-medium text-gray-700 mb-1">Scan Tolerance (Minutes)</label>
+                            <div class="flex items-center space-x-3">
+                                <input type="number" name="scan_tolerance_minutes" id="scan_tolerance_minutes"
+                                    value="{{ settings.scan_tolerance_minutes }}" min="0" max="60"
+                                    class="w-24 rounded-lg border-gray-300 shadow-sm focus:border-slate-500 focus:ring-slate-500">
+                                <span class="text-sm text-gray-500">minutes before and after class time to allow
+                                    scanning.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="pt-6 border-t border-gray-100 flex justify-end">
+                    <button type="submit"
+                        class="bg-slate-800 text-white px-8 py-3 rounded-lg font-bold hover:bg-slate-700 transition-all shadow-lg hover:shadow-xl active:scale-95">
+                        Save Configuration
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

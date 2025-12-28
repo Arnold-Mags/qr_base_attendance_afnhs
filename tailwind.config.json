@@ -1,0 +1,17 @@
+{
+  "content": [
+    "./attendance/templates/**/*.html",
+    "./attendance/**/*.py",
+    "./static/**/*.js"
+  ],
+  "theme": {
+    "extend": {
+      "colors": {
+        "primary": "#1e293b",
+        "success": "#10b981",
+        "danger": "#f43f5e"
+      }
+    }
+  },
+  "plugins": []
+}

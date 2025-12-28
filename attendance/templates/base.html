@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ScholarScan{% endblock %} - School Attendance System</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Flowbite CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.css" rel="stylesheet" />
+
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --color-primary: #1e293b;
+            --color-success: #10b981;
+            --color-danger: #f43f5e;
+        }
+
+        .btn-primary {
+            background-color: var(--color-primary);
+        }
+
+        .btn-primary:hover {
+            background-color: #0f172a;
+        }
+
+        .badge-present {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-late {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-absent {
+            background-color: #ffe4e6;
+            color: #9f1239;
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body class="bg-gray-50">
+    {% if user.is_authenticated %}
+    <!-- Navigation Bar -->
+    <nav class="bg-slate-800 border-b border-slate-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <!-- Logo -->
+                    <div class="flex-shrink-0 flex items-center">
+                        <h1 class="text-2xl font-bold text-white">
+                            <span class="text-emerald-500">Scholar</span>Scan
+                        </h1>
+                    </div>
+
+                    <!-- Navigation Links -->
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="{% url 'dashboard' %}"
+                            class="border-transparent text-gray-300 hover:border-emerald-500 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Dashboard
+                        </a>
+
+                        {% if user.role == 'TEACHER' or user.role == 'PRINCIPAL' or user.role == 'SUPERADMIN' %}
+                        <a href="{% url 'scan_portal' %}"
+                            class="border-transparent text-gray-300 hover:border-emerald-500 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Scan Portal
+                        </a>
+                        {% endif %}
+
+                        {% if user.role == 'PRINCIPAL' or user.role == 'SUPERADMIN' %}
+                        <a href="{% url 'notification_history' %}"
+                            class="border-transparent text-gray-300 hover:border-emerald-500 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Notifications
+                        </a>
+                        <a href="{% url 'school_settings' %}"
+                            class="border-transparent text-gray-300 hover:border-emerald-500 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Settings
+                        </a>
+                        {% if user.role == 'STUDENT' %}
+                        <a href="{% url 'digital_id' %}"
+                            class="border-transparent text-gray-300 hover:border-emerald-500 hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            My Digital ID
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- User Menu -->
+                <div class="flex items-center">
+                    <div class="ml-3 relative">
+                        <div class="flex items-center space-x-4">
+                            <span class="text-gray-300 text-sm">
+                                {{ user.get_full_name|default:user.username }}
+                                <span class="text-emerald-500">({{ user.get_role_display }})</span>
+                            </span>
+                            <a href="{% url 'logout' %}"
+                                class="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="{% if user.is_authenticated %}py-10{% endif %}">
+        <div class="{% if user.is_authenticated %}max-w-7xl mx-auto sm:px-6 lg:px-8{% endif %}">
+            <!-- Messages -->
+            {% if messages %}
+            <div class="mb-6 px-4 sm:px-0">
+                {% for message in messages %}
+                <div
+                    class="rounded-lg p-4 mb-4 {% if message.tags == 'error' %}bg-rose-100 text-rose-800{% elif message.tags == 'success' %}bg-emerald-100 text-emerald-800{% elif message.tags == 'warning' %}bg-amber-100 text-amber-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    {% if user.is_authenticated %}
+    <footer class="bg-white border-t border-gray-200 mt-12">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <p class="text-center text-gray-500 text-sm">
+                &copy; 2025 ScholarScan - School Attendance System. All rights reserved.
+            </p>
+        </div>
+    </footer>
+    {% endif %}
+
+    <!-- Flowbite JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

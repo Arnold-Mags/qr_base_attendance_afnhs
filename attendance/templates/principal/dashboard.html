@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}Principal Dashboard{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-0">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-slate-800">Principal Dashboard</h1>
+        <p class="text-gray-600 mt-2">School-wide attendance analytics and insights</p>
+    </div>
+
+    <!-- School-wide Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Total Students</p>
+                    <p class="text-3xl font-bold text-slate-800">{{ total_students }}</p>
+                </div>
+                <div class="bg-slate-100 rounded-full p-3">
+                    <svg class="w-6 h-6 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                        </path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm">Total Subjects</p>
+                    <p class="text-3xl font-bold text-slate-800">{{ total_subjects }}</p>
+                </div>
+                <div class="bg-blue-100 rounded-full p-3">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                        </path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-emerald-50 rounded-lg shadow-md p-6 border-2 border-emerald-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-emerald-700 text-sm">Today Present</p>
+                    <p class="text-3xl font-bold text-emerald-600">{{ today_present }}</p>
+                </div>
+                <div class="bg-emerald-100 rounded-full p-3">
+                    <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-rose-50 rounded-lg shadow-md p-6 border-2 border-rose-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-rose-700 text-sm">Today Absent</p>
+                    <p class="text-3xl font-bold text-rose-600">{{ today_absent }}</p>
+                </div>
+                <div class="bg-rose-100 rounded-full p-3">
+                    <svg class="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly Attendance Trend -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 class="text-xl font-bold text-slate-800 mb-4">Weekly Attendance Trend</h2>
+        <div style="height: 300px;">
+            <canvas id="attendanceTrendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Grade-Level Absence Heatmap -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 class="text-xl font-bold text-slate-800 mb-4">Absence Rate by Grade Level ({{ current_month }})</h2>
+        <p class="text-sm text-gray-600 mb-6">Visual representation of absence distribution</p>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {% for grade in heatmap_data %}
+            <div class="relative">
+                {% if grade.absence_rate < 5 %} {% with bg_color="bg-emerald-100" text_color="text-emerald-800"
+                    border_color="border-emerald-300" %} {% elif grade.absence_rate < 10 %} {% with
+                    bg_color="bg-amber-100" text_color="text-amber-800" border_color="border-amber-300" %} {% elif
+                    grade.absence_rate < 20 %} {% with bg_color="bg-orange-100" text_color="text-orange-800"
+                    border_color="border-orange-300" %} {% else %} {% with bg_color="bg-rose-100"
+                    text_color="text-rose-800" border_color="border-rose-300" %} {% endif %} <div
+                    class="border-2 {{ border_color }} {{ bg_color }} rounded-lg p-4 text-center">
+                    <p class="text-sm font-semibold {{ text_color }} mb-2">Grade {{ grade.grade_level }}</p>
+                    <p class="text-3xl font-bold {{ text_color }}">{{ grade.absence_rate }}%</p>
+                    <p class="text-xs {{ text_color }} mt-2">{{ grade.total_absences }} absences</p>
+            </div>
+            {% endwith %}
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center py-8 text-gray-500">
+            No attendance data available
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+    <!-- Top Sections -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-bold text-slate-800 mb-4">Top Sections with Highest Absences</h2>
+        <div class="space-y-3">
+            {% for section in top_sections %}
+            <div class="flex items-center justify-between p-3 bg-rose-50 rounded-lg border border-rose-200">
+                <div>
+                    <p class="font-semibold text-slate-800">Grade {{ section.grade_level }} - {{ section.section }}</p>
+                </div>
+                <span class="badge-absent">{{ section.absence_count }} absences</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Recent Alerts -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-bold text-slate-800 mb-4">Recent Absence Alerts</h2>
+        <div class="space-y-3 max-h-80 overflow-y-auto">
+            {% for alert in recent_alerts %}
+            <div class="flex items-start p-3 bg-amber-50 rounded-lg border border-amber-200">
+                <div class="bg-amber-500 rounded-full p-2 mr-3">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                        </path>
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <p class="font-semibold text-slate-800">{{ alert.student.user.get_full_name }}</p>
+                    <p class="text-sm text-gray-600">{{ alert.subject.name }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const trendCtx = document.getElementById('attendanceTrendChart').getContext('2d');
+        const weeklyData = {{ weekly_trend| safe
+    }};
+
+    new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: weeklyData.map(d => d.date),
+            datasets: [
+                {
+                    label: 'Present',
+                    data: weeklyData.map(d => d.present),
+                    borderColor: '#10b981',
+                    backgroundColor: '#10b98122',
+                    fill: true,
+                    tension: 0.4
+                },
+                {
+                    label: 'Absent',
+                    data: weeklyData.map(d => d.absent),
+                    borderColor: '#f43f5e',
+                    backgroundColor: '#f43f5e22',
+                    fill: true,
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+    });
+</script>
+{% endblock %}

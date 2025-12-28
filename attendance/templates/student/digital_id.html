@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}My Digital ID{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-0">
+    {% if has_profile %}
+    <div class="max-w-2xl mx-auto">
+        <div class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-slate-800">My Digital ID</h1>
+            <p class="text-gray-600 mt-2">Show this QR code to mark your attendance</p>
+        </div>
+
+        <!-- Digital ID Card -->
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-2xl p-8 text-white">
+            <!-- School Header -->
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold">
+                    <span class="text-emerald-500">Scholar</span>Scan
+                </h2>
+                <p class="text-gray-300 text-sm">Digital Student ID</p>
+            </div>
+
+            <!-- Student Photo and Info -->
+            <div class="flex flex-col md:flex-row items-center gap-6 mb-6">
+                <!-- Photo -->
+                <div class="flex-shrink-0">
+                    {% if student.photo %}
+                    <img src="{{ student.photo.url }}" alt="{{ student.user.get_full_name }}"
+                        class="w-32 h-32 rounded-full object-cover border-4 border-emerald-500">
+                    {% else %}
+                    <div
+                        class="w-32 h-32 rounded-full bg-emerald-500 flex items-center justify-center border-4 border-emerald-400">
+                        <span class="text-4xl font-bold text-white">
+                            {{ student.user.first_name.0 }}{{ student.user.last_name.0 }}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Info -->
+                <div class="flex-1 text-center md:text-left">
+                    <h3 class="text-2xl font-bold mb-2">{{ student.user.get_full_name }}</h3>
+                    <div class="space-y-1 text-gray-300">
+                        <p><span class="font-semibold">LRN:</span> {{ student.student_id }}</p>
+                        <p><span class="font-semibold">Grade:</span> {{ student.get_grade_level_display }} - {{
+                            student.section }}</p>
+                        {% if student.strand %}
+                        <p><span class="font-semibold">Strand:</span> {{ student.get_strand_display }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- QR Code -->
+            <div class="bg-white rounded-xl p-6 text-center">
+                <img src="data:image/png;base64,{{ qr_code }}" alt="Student QR Code" class="mx-auto"
+                    style="width: 250px; height: 250px;">
+                <p class="text-slate-800 text-sm mt-4 font-semibold">
+                    Scan this code to mark attendance
+                </p>
+                <p class="text-gray-500 text-xs mt-1">
+                    Valid only during class hours
+                </p>
+            </div>
+
+            <!-- Instructions -->
+            <div class="mt-6 bg-slate-700 rounded-lg p-4">
+                <h4 class="font-semibold mb-2 text-emerald-400">Instructions:</h4>
+                <ul class="text-sm text-gray-300 space-y-1">
+                    <li>• Show this QR code to your teacher during class</li>
+                    <li>• QR code is unique to you - do not share screenshots</li>
+                    <li>• Scan is only valid within class time window</li>
+                    <li>• Keep your device charged for attendance marking</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Auto-refresh notice -->
+        <div class="mt-4 text-center">
+            <p class="text-sm text-gray-500">
+                <svg class="inline w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                This page refreshes automatically every 30 seconds for security
+            </p>
+        </div>
+    </div>
+    {% else %}
+    <div class="max-w-md mx-auto text-center py-12">
+        <div class="bg-rose-100 rounded-lg p-8">
+            <svg class="mx-auto h-16 w-16 text-rose-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                </path>
+            </svg>
+            <h2 class="text-xl font-bold text-slate-800 mb-2">Profile Not Found</h2>
+            <p class="text-gray-600">
+                Your student profile has not been set up yet. Please contact your school administrator.
+            </p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if has_profile %}
+<script>
+    // Auto-refresh every 30 seconds for security
+    setTimeout(function () {
+        location.reload();
+    }, 30000);
+</script>
+{% endif %}
+{% endblock %}

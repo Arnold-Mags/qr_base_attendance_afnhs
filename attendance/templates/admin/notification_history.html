@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Notification History{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-0">
+    <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-800">Notification History</h1>
+            <p class="text-gray-600 mt-2">History of all alerts sent to parents/guardians</p>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+            <a href="?status=SENT"
+                class="px-4 py-2 bg-emerald-100 text-emerald-800 rounded-lg text-sm font-medium hover:bg-emerald-200 transition-colors">Sent</a>
+            <a href="?status=FAILED"
+                class="px-4 py-2 bg-rose-100 text-rose-800 rounded-lg text-sm font-medium hover:bg-rose-200 transition-colors">Failed</a>
+            <a href="?status=PENDING"
+                class="px-4 py-2 bg-amber-100 text-amber-800 rounded-lg text-sm font-medium hover:bg-amber-200 transition-colors">Pending</a>
+            <a href="{% url 'notification_history' %}"
+                class="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">Clear
+                Filter</a>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-8">
+        <form method="GET" class="flex gap-4">
+            <input type="text" name="search" placeholder="Search by Student Name or LRN..."
+                value="{{ request.GET.search }}"
+                class="flex-1 rounded-lg border-gray-300 focus:ring-slate-500 focus:border-slate-500">
+            <button type="submit"
+                class="bg-slate-800 text-white px-6 py-2 rounded-lg font-medium hover:bg-slate-700 transition-colors">Search</button>
+        </form>
+    </div>
+
+    <!-- Notifications Table -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-slate-50 border-b border-gray-200 text-slate-700 uppercase text-xs font-bold">
+                    <tr>
+                        <th class="px-6 py-4">Student</th>
+                        <th class="px-6 py-4">Subject</th>
+                        <th class="px-6 py-4">Status</th>
+                        <th class="px-6 py-4">Sent At</th>
+                        <th class="px-6 py-4">Message Preview</th>
+                        <th class="px-6 py-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for notification in notifications %}
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="font-semibold text-slate-800">{{ notification.student.user.get_full_name }}
+                            </div>
+                            <div class="text-xs text-gray-500">LRN: {{ notification.student.student_id }}</div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            {{ notification.attendance_record.subject.name|default:"N/A" }}
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if notification.status == 'SENT' %}
+                            <span
+                                class="px-2 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full">SENT</span>
+                            {% elif notification.status == 'FAILED' %}
+                            <span
+                                class="px-2 py-1 bg-rose-100 text-rose-800 text-xs font-bold rounded-full">FAILED</span>
+                            {% else %}
+                            <span
+                                class="px-2 py-1 bg-amber-100 text-amber-800 text-xs font-bold rounded-full">PENDING</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            {{ notification.sent_at|date:"M d, Y" }}
+                            <div class="text-xs text-gray-400">{{ notification.sent_at|time:"h:i A" }}</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <p class="text-sm text-gray-600 truncate max-w-xs">{{ notification.message }}</p>
+                        </td>
+                        <td class="px-6 py-4">
+                            <button class="text-slate-600 hover:text-slate-800 font-medium text-sm"
+                                onclick="alert('Message: {{ notification.message|escapejs }}')">View Full</button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                            No notifications found matching your criteria.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
