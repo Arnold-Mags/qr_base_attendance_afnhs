@@ -88,14 +88,35 @@ WSGI_APPLICATION = "scholarscan.wsgi.application"
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME", "scholarscan_db"),
-        "USER": os.getenv("DB_USER", "postgres"),
-        "PASSWORD": os.getenv("DB_PASSWORD", "admin12345"),
-        "HOST": os.getenv("DB_HOST", "localhost"),
-        "PORT": os.getenv("DB_PORT", "5432"),
+    #"default": {
+   #     "ENGINE": "django.db.backends.postgresql",
+   #     "NAME": os.getenv("DB_NAME", "scholarscan_db"),
+   #     "USER": os.getenv("DB_USER", "postgres"),
+   #     "PASSWORD": os.getenv("DB_PASSWORD", "admin12345"),
+   #     "HOST": os.getenv("DB_HOST", "localhost"),
+   #     "PORT": os.getenv("DB_PORT", "5432"),
+   # }
+
+     #Render Deployment
+     'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'scholarscan_db',
+        'USER': 'scholarscan_db_user',
+        'PASSWORD': 'pR09qXl7VtFYRdIm1YeuEbSCWHo4BETxG',
+        'HOST': 'dpg-d58tfc8gjchc73ac9e2g-a',
+        'PORT': '5432',
     }
+
+     # Using Render's DATABASE_URL environment variable
+    #'default':{
+    #   'ENGINE': 'django.db.backends.postgresql',
+    #    'NAME': 'scholarscan_db',  # database name
+    #    'USER': 'scholarscan_db_user',  # username
+    #    'PASSWORD': 'pLHvFSrneNHIk6LAswLpLXIp7gSCCo0a',  # password
+    #    'HOST': 'R09qXl7VtFYRdIm1YeuEbSCWHo4BETxG@dpg-d58tfc8gjchc73ac9e2g-a.oregon-postgres.render.com',  # host
+    #    'PORT': '5432',  # default PostgreSQL port
+    #} 
+    # postgresql://scholarscan_db_user:R09qXl7VtFYRdIm1YeuEbSCWHo4BETxG@dpg-d58tfc8gjchc73ac9e2g-a.oregon-postgres.render.com/scholarscan_db
 }
 
 
