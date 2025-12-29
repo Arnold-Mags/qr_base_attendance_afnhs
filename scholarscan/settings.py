@@ -105,7 +105,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'scholarscan_db',
         'USER': 'scholarscan_db_user',
-        'PASSWORD': 'pR09qXl7VtFYRdIm1YeuEbSCWHo4BETxG',
+        'PASSWORD': 'R09qXl7VtFYRdIm1YeuEbSCWHo4BETxG',
         'HOST': 'dpg-d58tfc8gjchc73ac9e2g-a',
         'PORT': '5432',
     }
