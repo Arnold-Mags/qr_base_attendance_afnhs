@@ -10,11 +10,226 @@ from .models import (
     User,
 )
 from django.db.models import Count, Q
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date as py_date
+import openpyxl
+from openpyxl.styles import Font, Alignment, PatternFill
+from io import BytesIO
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from xhtml2pdf import pisa
 from .forms import StudentRegistrationForm, SubjectForm
+from django.utils import timezone
 
 
 @teacher_required
+def teacher_reports_view(request):
+    """View to generate attendance reports for subjects or advisory"""
+    subjects = Subject.objects.filter(teacher=request.user)
+
+    # Check advisory
+    has_advisory = False
+    advisory_grade = None
+    advisory_section = None
+    if hasattr(request.user, "teacher_profile"):
+        profile = request.user.teacher_profile
+        if profile.advisory_grade and profile.advisory_section:
+            has_advisory = True
+            advisory_grade = profile.advisory_grade
+            advisory_section = profile.advisory_section
+
+    # Filters
+    report_type = request.GET.get("type", "daily")
+    report_target = request.GET.get(
+        "target",
+        (
+            f"subject_{subjects.first().id}"
+            if subjects.exists()
+            else "advisory" if has_advisory else ""
+        ),
+    )
+
+    # Determine Date Range
+    now = timezone.localtime()
+    today = now.date()
+    start_date = today
+    end_date = today
+
+    if report_type == "weekly":
+        start_date = today - timedelta(days=today.weekday())
+        end_date = today
+    elif report_type == "monthly":
+        start_date = today.replace(day=1)
+        end_date = today
+
+    report_data = []
+    is_advisory_report = False
+    report_title = ""
+
+    if report_target == "advisory" and has_advisory:
+        is_advisory_report = True
+        report_title = f"Advisory Class: Grade {advisory_grade} - {advisory_section}"
+        students = (
+            StudentProfile.objects.filter(
+                grade_level=advisory_grade, section=advisory_section
+            )
+            .select_related("user")
+            .order_by("user__last_name")
+        )
+
+        # Aggregate General (Gate) Attendance
+        for student in students:
+            records = DailyAttendance.objects.filter(
+                student=student, date__gte=start_date, date__lte=end_date
+            )
+            present = records.filter(status="PRESENT").count()
+            late = records.filter(status="LATE").count()
+            absent = records.filter(status="ABSENT").count()
+            total_days = (end_date - start_date).days + 1
+
+            # Simple rate (present + late) / total
+            rate = (
+                round(((present + late) / total_days * 100), 1) if total_days > 0 else 0
+            )
+
+            report_data.append(
+                {
+                    "name": student.user.get_full_name(),
+                    "lrn": student.student_id,
+                    "present": present,
+                    "late": late,
+                    "absent": absent,
+                    "total": total_days,
+                    "rate": rate,
+                }
+            )
+
+    elif report_target.startswith("subject_"):
+        try:
+            subject_id = report_target.split("_")[1]
+            subject = subjects.get(id=subject_id)
+            report_title = (
+                f"Subject: {subject.name} (G{subject.grade_level}-{subject.section})"
+            )
+            students = (
+                subject.students.all()
+                .select_related("user")
+                .order_by("user__last_name")
+            )
+
+            for student in students:
+                records = AttendanceRecord.objects.filter(
+                    student=student,
+                    subject=subject,
+                    date__gte=start_date,
+                    date__lte=end_date,
+                )
+                present = records.filter(status="PRESENT").count()
+                late = records.filter(status="LATE").count()
+                absent = records.filter(status="ABSENT").count()
+                total = records.count()
+
+                rate = round(((present + late) / total * 100), 1) if total > 0 else 0
+
+                report_data.append(
+                    {
+                        "name": student.user.get_full_name(),
+                        "lrn": student.student_id,
+                        "present": present,
+                        "late": late,
+                        "absent": absent,
+                        "total": total,
+                        "rate": rate,
+                    }
+                )
+        except (Subject.DoesNotExist, IndexError, ValueError):
+            pass
+
+    # Handle Export
+    if request.GET.get("export") == "excel":
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Attendance Report"
+
+        ws.append([report_title])
+        ws.append([f"Report Type: {report_type.title()} ({start_date} to {end_date})"])
+        ws.append([])  # spacer
+
+        headers = [
+            "Student Name",
+            "LRN",
+            "Present",
+            "Late",
+            "Absent",
+            "Total",
+            "Rate (%)",
+        ]
+        ws.append(headers)
+
+        # Style headers
+        for cell in ws[4]:
+            cell.font = Font(bold=True, color="FFFFFF")
+            cell.fill = PatternFill(
+                start_color="1F2937", end_color="1F2937", fill_type="solid"
+            )
+            cell.alignment = Alignment(horizontal="center")
+
+        for row in report_data:
+            ws.append(
+                [
+                    row["name"],
+                    row["lrn"],
+                    row["present"],
+                    row["late"],
+                    row["absent"],
+                    row["total"],
+                    row["rate"],
+                ]
+            )
+
+        response = HttpResponse(
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response["Content-Disposition"] = (
+            f'attachment; filename="Attendance_Report_{report_type}.xlsx"'
+        )
+        wb.save(response)
+        return response
+
+    if request.GET.get("export") == "pdf":
+        template_path = "teacher/reports_pdf.html"
+        context = {
+            "report_title": report_title,
+            "report_subtitle": f"{start_date.strftime('%B %d, %Y')} to {end_date.strftime('%B %d, %Y')}",
+            "report_data": report_data,
+            "is_advisory_report": is_advisory_report,
+            "now": now,
+        }
+        response = HttpResponse(content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'attachment; filename="Attendance_Report_{report_type}.pdf"'
+        )
+        html = render_to_string(template_path, context)
+        pisa_status = pisa.CreatePDF(html, dest=response)
+        if pisa_status.err:
+            return HttpResponse(f"Error generating PDF: {html}")
+        return response
+
+    context = {
+        "subjects": subjects,
+        "has_advisory": has_advisory,
+        "advisory_grade": advisory_grade,
+        "advisory_section": advisory_section,
+        "report_type": report_type,
+        "report_target": report_target,
+        "report_title": report_title,
+        "report_subtitle": f"{start_date.strftime('%B %d, %Y')} to {end_date.strftime('%B %d, %Y')}",
+        "report_data": report_data,
+        "is_advisory_report": is_advisory_report,
+        "now": now,
+    }
+    return render(request, "teacher/reports.html", context)
+
+
 def teacher_dashboard(request):
     """Teacher dashboard with assigned subjects and quick stats"""
     subjects = Subject.objects.filter(teacher=request.user).prefetch_related("students")

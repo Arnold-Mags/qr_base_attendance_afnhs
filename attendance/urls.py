@@ -53,6 +53,11 @@ urlpatterns = [
         views_teacher.delete_subject_view,
         name="delete_subject_view",
     ),
+    path(
+        "teacher/reports/",
+        views_teacher.teacher_reports_view,
+        name="teacher_reports",
+    ),
     # Principal
     path(
         "principal/dashboard/",

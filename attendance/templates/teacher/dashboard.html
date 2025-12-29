@@ -157,7 +157,8 @@
             </div>
         </a>
 
-        <div class="bg-gradient-to-r from-slate-800 to-slate-900 rounded-lg shadow-md p-6 text-white">
+        <a href="{% url 'teacher_reports' %}"
+            class="block bg-gradient-to-r from-slate-800 to-slate-900 rounded-lg shadow-md p-6 text-white hover:from-slate-900 hover:to-black transition-all">
             <div class="flex items-center">
                 <div class="bg-white bg-opacity-20 rounded-full p-3 mr-4">
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -171,7 +172,7 @@
                     <p class="text-sm opacity-90">Generate attendance reports</p>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
 </div>
 {% endblock %}

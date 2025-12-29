@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+
+{% block title %}Attendance Reports - Teacher{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-0">
+    <div class="mb-8 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-800">Attendance Reports</h1>
+            <p class="text-gray-600 mt-2">Generate and export attendance summaries</p>
+        </div>
+        <a href="{% url 'teacher_dashboard' %}" class="text-blue-600 hover:text-blue-800 font-medium flex items-center">
+            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18">
+                </path>
+            </svg>
+            Dashboard
+        </a>
+    </div>
+
+    <!-- Report Configuration Card -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8 no-print">
+        <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <!-- Report Type -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Report Type</label>
+                <select name="type"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="daily" {% if report_type == 'daily' %}selected{% endif %}>Daily (Today)</option>
+                    <option value="weekly" {% if report_type == 'weekly' %}selected{% endif %}>Weekly (Current Week)
+                    </option>
+                    <option value="monthly" {% if report_type == 'monthly' %}selected{% endif %}>Monthly (Current Month)
+                    </option>
+                </select>
+            </div>
+
+            <!-- Report Target -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Report For</label>
+                <select name="target"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <optgroup label="Subjects">
+                        {% for subject in subjects %}
+                        <option value="subject_{{ subject.id }}" {% if report_target == 'subject_'|add:subject.id|stringformat:"s" %}selected{% endif %}>{{ subject.name }} (G{{ subject.grade_level }}-{{ subject.section }})</option>
+                        {% endfor %}
+                    </optgroup>
+                    {% if has_advisory %}
+                    <optgroup label="Advisory Class">
+                        <option value="advisory" {% if report_target == 'advisory' %}selected{% endif %}>
+                            Advisory {{ advisory_grade }}-{{ advisory_section }}
+                        </option>
+                    </optgroup>
+                    {% endif %}
+                </select>
+            </div>
+
+            <!-- Actions -->
+            <div class="md:col-span-2 flex items-end gap-3">
+                <button type="submit"
+                    class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow transition-colors flex-1">
+                    Generate Preview
+                </button>
+                <div class="flex gap-2">
+                    <button type="button" onclick="window.print()"
+                        class="p-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200" title="Print">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z">
+                            </path>
+                        </svg>
+                    </button>
+                    <a href="?{{ request.GET.urlencode }}&export=excel"
+                        class="p-2 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200"
+                        title="Export Excel">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                            </path>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Report Preview Area -->
+    <div class="bg-white rounded-lg shadow-xl overflow-hidden print:shadow-none">
+        <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+            <div>
+                <h2 class="text-xl font-bold text-gray-800">{{ report_title }}</h2>
+                <p class="text-sm text-gray-500">{{ report_subtitle }}</p>
+            </div>
+            <div class="text-right">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Date Generated</p>
+                <p class="text-sm font-medium text-gray-700">{{ now|date:"M d, Y" }}</p>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            {% if is_advisory_report %}
+            <!-- Advisory (Gate Log) Table -->
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Student Name</th>
+                        <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Present</th>
+                        <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Late</th>
+                        <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Absent</th>
+                        <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase">Rate</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for row in report_data %}
+                    <tr>
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ row.name }}</td>
+                        <td class="px-6 py-4 text-center text-sm text-gray-600">{{ row.present }}</td>
+                        <td class="px-6 py-4 text-center text-sm text-gray-600">{{ row.late }}</td>
+                        <td class="px-6 py-4 text-center text-sm text-gray-600">{{ row.absent }}</td>
+                        <td class="px-6 py-4 text-center">
+                            <span
+                                class="px-2 py-1 text-xs font-bold rounded-full {% if row.rate < 90 %}bg-rose-100 text-rose-700{% else %}bg-emerald-100 text-emerald-700{% endif %}">
+                                {{ row.rate }}%
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-10 text-center text-gray-500">No data found for this period.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <!-- Subject Attendance Table -->
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Student
+                            Name</th>
+                        <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">
+                            Present</th>
+                        <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Late
+                        </th>
+                        <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">
+                            Absent</th>
+                        <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Total
+                            Sessions</th>
+                        <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">
+                            Attendance Rate</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    {% for row in report_data %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ row.name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-emerald-600 font-semibold">{{
+                            row.present }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-amber-600 font-semibold">{{
+                            row.late }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-rose-600 font-semibold">{{
+                            row.absent }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{{ row.total }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <span
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold {% if row.rate >= 90 %}bg-emerald-100 text-emerald-800{% elif row.rate >= 75 %}bg-amber-100 text-amber-800{% else %}bg-rose-100 text-rose-800{% endif %}">
+                                {{ row.rate }}%
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">No attendance data found for the
+                            selected criteria.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+
+        .no-print,
+        nav,
+        header,
+        footer {
+            display: none !important;
+        }
+
+        .bg-white {
+            box-shadow: none !important;
+        }
+
+        body {
+            background-color: white !important;
+        }
+
+        .px-4,
+        .sm:px-0 {
+            padding: 0 !important;
+        }
+
+        table {
+            border: 1px solid #ddd;
+        }
+
+        thead {
+            display: table-header-group;
+        }
+    }
+</style>
+{% endblock %}
