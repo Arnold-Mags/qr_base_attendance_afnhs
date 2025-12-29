@@ -149,13 +149,6 @@ class Command(BaseCommand):
         # Create Students
         student_names = [
             ("student1", "Jose", "Rizal", 7, "A", None),
-            ("student2", "Andres", "Bonifacio", 7, "A", None),
-            ("student3", "Emilio", "Aguinaldo", 7, "A", None),
-            ("student4", "Apolinario", "Mabini", 7, "A", None),
-            ("student5", "Gabriela", "Silang", 7, "A", None),
-            ("student6", "Melchora", "Aquino", 11, "STEM-A", "STEM"),
-            ("student7", "Marcelo", "Del Pilar", 11, "STEM-A", "STEM"),
-            ("student8", "Graciano", "Lopez Jaena", 11, "STEM-A", "STEM"),
         ]
 
         students = []
