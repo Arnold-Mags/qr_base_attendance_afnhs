@@ -9,10 +9,21 @@
         <div class="mb-8 text-center">
             <h1 class="text-3xl font-bold text-slate-800">My Digital ID</h1>
             <p class="text-gray-600 mt-2">Show this QR code to mark your attendance</p>
+            <div class="mt-4 no-print">
+                <button onclick="window.print()"
+                    class="inline-flex items-center px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 shadow-md transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z">
+                        </path>
+                    </svg>
+                    Print QR Code
+                </button>
+            </div>
         </div>
 
         <!-- Digital ID Card -->
-        <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-2xl p-8 text-white">
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-2xl p-8 text-white no-print">
             <!-- School Header -->
             <div class="text-center mb-6">
                 <h2 class="text-2xl font-bold">
@@ -43,7 +54,8 @@
                     <h3 class="text-2xl font-bold mb-2">{{ student.user.get_full_name }}</h3>
                     <div class="space-y-1 text-gray-300">
                         <p><span class="font-semibold">LRN:</span> {{ student.student_id }}</p>
-                        <p><span class="font-semibold">Grade:</span> {{ student.get_grade_level_display }} - {{ student.section }}</p>
+                        <p><span class="font-semibold">Grade:</span> {{ student.get_grade_level_display }} - {{
+                            student.section }}</p>
                         {% if student.strand %}
                         <p><span class="font-semibold">Strand:</span> {{ student.get_strand_display }}</p>
                         {% endif %}
@@ -76,7 +88,7 @@
         </div>
 
         <!-- Auto-refresh notice -->
-        <div class="mt-4 text-center">
+        <div class="mt-4 text-center no-print">
             <p class="text-sm text-gray-500">
                 <svg class="inline w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -84,6 +96,15 @@
                 </svg>
                 This page refreshes automatically every 30 seconds for security
             </p>
+        </div>
+
+        <!-- Print-only Target Section (150x150) -->
+        <div id="print-qr-section" class="hidden print:flex flex-col items-center justify-center bg-white"
+            style="width: 150px; height: 150px; padding: 5px;">
+            <p class="text-black font-bold text-center leading-tight" style="font-size: 10px; margin-bottom: 2px;">
+                {{ student.user.get_full_name|upper }}
+            </p>
+            <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" style="width: 120px; height: 120px;">
         </div>
     </div>
     {% else %}
@@ -111,4 +132,36 @@
     }, 30000);
 </script>
 {% endif %}
+
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+
+        #print-qr-section,
+        #print-qr-section * {
+            visibility: visible;
+        }
+
+        #print-qr-section {
+            position: absolute;
+            left: 0;
+            top: 0;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        .no-print {
+            display: none !important;
+        }
+
+        @page {
+            size: 150px 150px;
+            margin: 0;
+        }
+    }
+</style>
 {% endblock %}
