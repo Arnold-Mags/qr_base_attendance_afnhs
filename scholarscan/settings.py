@@ -101,24 +101,24 @@ DATABASES = {
    # }
 
      #Render Deployment
-     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'scholarscan_db',
-        'USER': 'scholarscan_db_user',
-        'PASSWORD': 'R09qXl7VtFYRdIm1YeuEbSCWHo4BETxG',
-        'HOST': 'dpg-d58tfc8gjchc73ac9e2g-a',
-        'PORT': '5432',
-    }
+    # 'default': {
+    #    'ENGINE': 'django.db.backends.postgresql',
+    #    'NAME': 'scholarscan_db',
+    #    'USER': 'scholarscan_db_user',
+    #    'PASSWORD': 'R09qXl7VtFYRdIm1YeuEbSCWHo4BETxG',
+    #    'HOST': 'dpg-d58tfc8gjchc73ac9e2g-a',
+    #    'PORT': '5432',
+    #}
 
      # Using Render's DATABASE_URL environment variable
-    #'default':{
-    #   'ENGINE': 'django.db.backends.postgresql',
-    #    'NAME': 'scholarscan_db',  # database name
-    #    'USER': 'scholarscan_db_user',  # username
-    #    'PASSWORD': 'pLHvFSrneNHIk6LAswLpLXIp7gSCCo0a',  # password
-    #    'HOST': 'R09qXl7VtFYRdIm1YeuEbSCWHo4BETxG@dpg-d58tfc8gjchc73ac9e2g-a.oregon-postgres.render.com',  # host
-    #    'PORT': '5432',  # default PostgreSQL port
-    #} 
+    'default':{
+       'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'scholarscan_db',  # database name
+        'USER': 'scholarscan_db_user',  # username
+        'PASSWORD': 'R09qXl7VtFYRdIm1YeuEbSCWHo4BETxG',  # password
+        'HOST': 'dpg-d58tfc8gjchc73ac9e2g-a.oregon-postgres.render.com',  # host
+        'PORT': '5432',  # default PostgreSQL port
+    } 
     # postgresql://scholarscan_db_user:R09qXl7VtFYRdIm1YeuEbSCWHo4BETxG@dpg-d58tfc8gjchc73ac9e2g-a.oregon-postgres.render.com/scholarscan_db
 }
 
