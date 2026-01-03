@@ -3,7 +3,15 @@
 {% block title %}My Digital ID{% endblock %}
 
 {% block content %}
-<div class="px-4 sm:px-0">
+<!-- Print-only Section (Moved to top for better reliability) -->
+<div id="print-qr-section" class="print-only">
+    <div class="print-container">
+        <p class="print-name">{{ student.user.get_full_name|upper }}</p>
+        <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" class="print-qr-image">
+    </div>
+</div>
+
+<div class="px-4 sm:px-0 no-print">
     {% if has_profile %}
     <div class="max-w-2xl mx-auto">
         <div class="mb-8 text-center">
@@ -98,13 +106,14 @@
             </p>
         </div>
 
-        <!-- Print-only Target Section (150x150) -->
-        <div id="print-qr-section" class="hidden print:flex flex-col items-center justify-center bg-white"
-            style="width: 150px; height: 150px; padding: 5px;">
-            <p class="text-black font-bold text-center leading-tight" style="font-size: 10px; margin-bottom: 2px;">
-                {{ student.user.get_full_name|upper }}
-            </p>
-            <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" style="width: 120px; height: 120px;">
+        <!-- Print-only Target Section (Optimized for ID page 86mm x 54mm) -->
+        <div id="print-qr-section" class="print-only">
+            <div class="print-container">
+                <p class="print-name">
+                    {{ student.user.get_full_name|upper }}
+                </p>
+                <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" class="print-qr-image">
+            </div>
         </div>
     </div>
     {% else %}
@@ -134,32 +143,79 @@
 {% endif %}
 
 <style>
+    /* Screen-only hiding */
+    @media screen {
+        .print-only {
+            display: none !important;
+        }
+    }
+
     @media print {
-        body * {
-            visibility: hidden;
+        /* General resets */
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
 
-        #print-qr-section,
-        #print-qr-section * {
-            visibility: visible;
+        /* Hide everything by default using a more aggressive method */
+        body {
+            visibility: hidden !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
         }
 
-        #print-qr-section {
-            position: absolute;
-            left: 0;
-            top: 0;
+        /* Standard containers that might interfere */
+        nav, footer, .no-print {
+            display: none !important;
+        }
+
+        /* The print section must be visible and forced as a direct overlay */
+        .print-only {
+            visibility: visible !important;
             display: flex !important;
-            flex-direction: column !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 86mm !important;
+            height: 54mm !important;
+            background: white !important;
+            z-index: 999999 !important;
+            margin: 0 !important;
+            padding: 0 !important;
             align-items: center !important;
             justify-content: center !important;
         }
 
-        .no-print {
-            display: none !important;
+        .print-container {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .print-name {
+            visibility: visible !important;
+            margin: 0 0 2mm 0 !important;
+            font-size: 16pt !important;
+            font-weight: bold !important;
+            color: black !important;
+            text-align: center !important;
+            font-family: Arial, sans-serif !important;
+        }
+
+        .print-qr-image {
+            visibility: visible !important;
+            width: 42mm !important;
+            height: 42mm !important;
+            display: block !important;
+            margin: 0 !important;
         }
 
         @page {
-            size: 150px 150px;
+            size: 86mm 54mm;
             margin: 0;
         }
     }

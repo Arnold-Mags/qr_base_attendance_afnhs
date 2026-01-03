@@ -56,7 +56,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware", #render
+    #"whitenoise.middleware.WhiteNoiseMiddleware", #render
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -91,14 +91,14 @@ WSGI_APPLICATION = "scholarscan.wsgi.application"
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 DATABASES = {
-    #"default": {
-   #     "ENGINE": "django.db.backends.postgresql",
-   #     "NAME": os.getenv("DB_NAME", "scholarscan_db"),
-   #     "USER": os.getenv("DB_USER", "postgres"),
-   #     "PASSWORD": os.getenv("DB_PASSWORD", "admin12345"),
-   #     "HOST": os.getenv("DB_HOST", "localhost"),
-   #     "PORT": os.getenv("DB_PORT", "5432"),
-   # }
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("DB_NAME", "scholarscan_db"),
+        "USER": os.getenv("DB_USER", "postgres"),
+        "PASSWORD": os.getenv("DB_PASSWORD", "admin12345"),
+        "HOST": os.getenv("DB_HOST", "localhost"),
+        "PORT": os.getenv("DB_PORT", "5432"),
+    }
 
      #Render Deployment
     # 'default': {
@@ -111,14 +111,14 @@ DATABASES = {
     #}
 
      # Using Render's DATABASE_URL environment variable
-    'default':{
-       'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'scholarscan_db',  # database name
-        'USER': 'scholarscan_db_user',  # username
-        'PASSWORD': 'R09qXl7VtFYRdIm1YeuEbSCWHo4BETxG',  # password
-        'HOST': 'dpg-d58tfc8gjchc73ac9e2g-a.oregon-postgres.render.com',  # host
-        'PORT': '5432',  # default PostgreSQL port
-    } 
+    #'default':{
+    #   'ENGINE': 'django.db.backends.postgresql',
+    #    'NAME': 'scholarscan_db',  # database name
+    #    'USER': 'scholarscan_db_user',  # username
+    #    'PASSWORD': 'R09qXl7VtFYRdIm1YeuEbSCWHo4BETxG',  # password
+    #    'HOST': 'dpg-d58tfc8gjchc73ac9e2g-a.oregon-postgres.render.com',  # host
+    #    'PORT': '5432',  # default PostgreSQL port
+    #} 
     # postgresql://scholarscan_db_user:R09qXl7VtFYRdIm1YeuEbSCWHo4BETxG@dpg-d58tfc8gjchc73ac9e2g-a.oregon-postgres.render.com/scholarscan_db
 }
 
@@ -161,7 +161,7 @@ STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+#STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Media files (uploads)
 MEDIA_URL = "media/"
